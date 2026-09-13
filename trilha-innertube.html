@@ -695,6 +695,7 @@
 
   var STORAGE_KEY = "trilha_state_v1";
   var DAY_MS = 24*60*60*1000;
+  var DEFAULT_ENDPOINT = window.location.protocol === "file:" ? "http://localhost:8787" : window.location.origin;
 
   var SWATCHES = ["#C08A28","#2F6B4F","#A1473F","#4C6FA8","#7A5AA6","#3A8FA0"];
 
@@ -722,7 +723,7 @@
           mkQ("Como se diz 'aprendizagem' em inglês?", ["Learning","Teaching","Reading","Speaking"], 0, "'Learning' significa aprendizagem.")
         ]}
       ],
-      settings: { geminiKey:"", geminiModel:"gemini-3.8-flash", geminiServerEndpoint:"http://localhost:8787", youtubeKey:"", innerTubeEndpoint:"http://localhost:8787", lastBotRun:0 },
+      settings: { geminiKey:"", geminiModel:"gemini-3.8-flash", geminiServerEndpoint:DEFAULT_ENDPOINT, youtubeKey:"", innerTubeEndpoint:DEFAULT_ENDPOINT, lastBotRun:0 },
       activityLog: [
         { date: Date.now(), type:"info", message:"Plataforma criada. Bem-vindo(a) ao Trilha!" }
       ]
@@ -767,7 +768,12 @@
   }
 
   var state = load();
-  state.settings.geminiServerEndpoint = state.settings.geminiServerEndpoint || "http://localhost:8787";
+  state.settings.geminiServerEndpoint = state.settings.geminiServerEndpoint || DEFAULT_ENDPOINT;
+  state.settings.innerTubeEndpoint = state.settings.innerTubeEndpoint || DEFAULT_ENDPOINT;
+  if(window.location.protocol !== "file:"){
+    if(/localhost:8787/.test(state.settings.geminiServerEndpoint)) state.settings.geminiServerEndpoint = DEFAULT_ENDPOINT;
+    if(/localhost:8787/.test(state.settings.innerTubeEndpoint)) state.settings.innerTubeEndpoint = DEFAULT_ENDPOINT;
+  }
   state.settings.geminiModel = state.settings.geminiModel || "gemini-3.8-flash";
   save();
 
@@ -1225,7 +1231,7 @@
   var innerTubePlaylistMeta = null;
 
   function innerTubeEndpoint(path, params){
-    var base = (state.settings.innerTubeEndpoint || "http://localhost:8787").replace(/\/+$/,"");
+    var base = (state.settings.innerTubeEndpoint || DEFAULT_ENDPOINT).replace(/\/+$/,"");
     var qs = Object.keys(params || {}).map(function(k){
       return encodeURIComponent(k)+"="+encodeURIComponent(params[k]);
     }).join("&");
@@ -1483,7 +1489,7 @@
     return "https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+state.settings.geminiKey;
   }
   function geminiServerEndpoint(path){
-    var base=(state.settings.geminiServerEndpoint||"http://localhost:8787").replace(/\/$/,"");
+    var base=(state.settings.geminiServerEndpoint||DEFAULT_ENDPOINT).replace(/\/$/,"");
     return base+path;
   }
   function callGemini(promptText){
@@ -1688,10 +1694,10 @@
   function renderSettings(){
     document.getElementById("geminiKeyInput").value = state.settings.geminiKey || "";
     document.getElementById("geminiModelInput").value = state.settings.geminiModel || "gemini-3.8-flash";
-    document.getElementById("geminiServerInput").value = state.settings.geminiServerEndpoint || "http://localhost:8787";
+    document.getElementById("geminiServerInput").value = state.settings.geminiServerEndpoint || DEFAULT_ENDPOINT;
     refreshGeminiServerStatus();
     document.getElementById("ytKeyInput").value = state.settings.youtubeKey || "";
-    document.getElementById("innerTubeEndpointInput").value = state.settings.innerTubeEndpoint || "http://localhost:8787";
+    document.getElementById("innerTubeEndpointInput").value = state.settings.innerTubeEndpoint || DEFAULT_ENDPOINT;
 
     var list = document.getElementById("subjManageList");
     list.innerHTML = state.subjects.map(function(s){
@@ -1717,7 +1723,7 @@
     renderAI(); refreshGeminiServerStatus();
   });
   document.getElementById("saveGeminiServerBtn").addEventListener("click", function(){
-    state.settings.geminiServerEndpoint = document.getElementById("geminiServerInput").value.trim().replace(/\/$/,"") || "http://localhost:8787";
+    state.settings.geminiServerEndpoint = document.getElementById("geminiServerInput").value.trim().replace(/\/$/,"") || DEFAULT_ENDPOINT;
     save(); refreshGeminiServerStatus(); toast("Servidor Gemini salvo.");
   });
   document.getElementById("saveYtBtn").addEventListener("click", function(){
@@ -1726,7 +1732,7 @@
     toast("Chave do YouTube salva.");
   });
   document.getElementById("saveInnerTubeBtn").addEventListener("click", function(){
-    state.settings.innerTubeEndpoint = document.getElementById("innerTubeEndpointInput").value.trim().replace(/\/+$/,"") || "http://localhost:8787";
+    state.settings.innerTubeEndpoint = document.getElementById("innerTubeEndpointInput").value.trim().replace(/\/+$/,"") || DEFAULT_ENDPOINT;
     save();
     toast("Servidor InnerTube salvo.");
   });
