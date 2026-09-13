@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Trilha — plataforma de estudos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1C2333;
+    --ink-soft:#2C3446;
+    --paper:#EEF0EC;
+    --paper-raised:#F8F9F6;
+    --line:#D8DCD3;
+    --gold:#C08A28;
+    --gold-soft:#EBD9AE;
+    --forest:#2F6B4F;
+    --forest-soft:#DCEAE1;
+    --brick:#A1473F;
+    --brick-soft:#F3DEDB;
+    --slate:#5B6472;
+    --font-display:'Fraunces', Georgia, serif;
+    --font-body:'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+    --radius:10px;
+    --sidebar-w:236px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font-body);
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{font-family:var(--font-display); color:var(--ink); margin:0;}
+  a{color:inherit;}
+  button{font-family:var(--font-body);}
+  ::selection{background:var(--gold-soft);}
+  :focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+  /* ---------- App shell ---------- */
+  .app{display:flex; min-height:100vh;}
+
+  .sidebar{
+    width:var(--sidebar-w);
+    flex-shrink:0;
+    background:var(--ink);
+    color:#EDEFEA;
+    padding:28px 18px;
+    display:flex;
+    flex-direction:column;
+    position:fixed;
+    top:0; bottom:0; left:0;
+  }
+  .brand{display:flex; align-items:baseline; gap:8px; margin-bottom:34px; padding-left:6px;}
+  .brand-mark{font-family:var(--font-display); font-size:26px; font-weight:600; color:#fff;}
+  .brand-sub{font-size:11px; color:#9BA3AE; letter-spacing:.02em;}
+
+  .trailnav{position:relative; display:flex; flex-direction:column; gap:2px; flex:1;}
+  .trailnav::before{
+    content:"";
+    position:absolute; left:17px; top:22px; bottom:22px; width:1px;
+    background:linear-gradient(to bottom, transparent, #454E60, transparent);
+  }
+  .navitem{
+    position:relative;
+    display:flex; align-items:center; gap:14px;
+    padding:11px 10px 11px 6px;
+    border-radius:8px;
+    color:#C7CCD6;
+    text-decoration:none;
+    cursor:pointer;
+    font-size:14.5px; font-weight:600;
+    background:transparent; border:none; text-align:left; width:100%;
+  }
+  .navitem .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:#4A5468; flex-shrink:0; margin-left:9px;
+    transition:background .15s, box-shadow .15s;
+  }
+  .navitem:hover{color:#fff;}
+  .navitem.active{color:#fff; background:rgba(255,255,255,.06);}
+  .navitem.active .dot{background:var(--gold); box-shadow:0 0 0 4px rgba(192,138,40,.18);}
+  .admin-only{display:none;}
+  body.is-admin .admin-only{display:flex;}
+
+  .sidebar-foot{padding-top:16px; border-top:1px solid #313A4C; margin-top:10px;}
+  .streak-pill{display:flex; align-items:center; gap:8px; font-size:13px; color:#C7CCD6;}
+  .streak-num{font-family:var(--font-display); font-size:18px; color:#fff;}
+
+  .main{
+    margin-left:var(--sidebar-w);
+    flex:1;
+    min-width:0;
+    display:flex; flex-direction:column;
+  }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 34px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper-raised);
+    position:sticky; top:0; z-index:5;
+  }
+  .profile-switch{display:flex; align-items:center; gap:10px;}
+  .profile-avatar{
+    width:34px; height:34px; border-radius:50%;
+    background:var(--gold-soft); color:#7A5A16;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-family:var(--font-display); font-size:15px;
+  }
+  select#profileSelect{
+    border:none; background:transparent; font-family:var(--font-body);
+    font-weight:700; font-size:14.5px; color:var(--ink); cursor:pointer;
+  }
+  .topbar-actions{display:flex; align-items:center; gap:14px;}
+  .trail-switcher{display:flex; align-items:center; gap:8px; min-width:240px;}
+  .trail-switcher label{margin:0; color:var(--slate); white-space:nowrap;}
+  #trailSelect{font-weight:700; border:none; background:transparent; padding:6px 4px; cursor:pointer;}
+  .icon-btn{
+    background:none; border:1px solid var(--line); border-radius:8px;
+    width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--slate);
+  }
+  .icon-btn:hover{border-color:var(--ink); color:var(--ink);}
+
+  .content{padding:32px 34px 80px; max-width:980px; width:100%;}
+  .section{display:none;}
+  .section.active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+
+  .page-head{margin-bottom:26px;}
+  .page-head h1{font-size:30px; font-weight:600; margin-bottom:6px;}
+  .page-head p{color:var(--slate); font-size:14.5px; margin:0;}
+
+  /* ---------- Bento dashboard ---------- */
+  .bento{display:grid; grid-template-columns:1.3fr 1fr; gap:16px; margin-bottom:20px;}
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+  .card.hero{
+    background:var(--ink);
+    color:#EDEFEA;
+    border:none;
+    display:flex; flex-direction:column; justify-content:space-between;
+    gap:18px;
+  }
+  .card.hero .big{font-family:var(--font-display); font-size:46px; font-weight:600; line-height:1;}
+  .card.hero .cap{color:#9BA3AE; font-size:13.5px;}
+  .stat-row{display:flex; gap:22px; margin-top:6px;}
+  .stat{display:flex; flex-direction:column; gap:2px;}
+  .stat b{font-family:var(--font-display); font-size:22px; color:#fff;}
+  .stat span{font-size:12px; color:#9BA3AE;}
+
+  .card h3{font-size:14px; text-transform:none; color:var(--slate); font-weight:700; margin-bottom:14px;}
+
+  /* trail visual for subject progress */
+  .trail-row{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .trail-row:last-child{border-bottom:none;}
+  .trail-swatch{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .trail-name{font-weight:700; font-size:14px; flex:1;}
+  .trail-track{flex:1.4; height:6px; border-radius:4px; background:var(--line); overflow:hidden; max-width:180px;}
+  .trail-fill{height:100%; border-radius:4px;}
+  .trail-pct{font-size:12.5px; color:var(--slate); width:34px; text-align:right;}
+
+  .feed-item{display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13.5px;}
+  .feed-item:last-child{border-bottom:none;}
+  .feed-dot{width:6px; height:6px; border-radius:50%; background:var(--gold); margin-top:6px; flex-shrink:0;}
+  .feed-time{color:var(--slate); font-size:12px; white-space:nowrap;}
+  .empty-note{color:var(--slate); font-size:13.5px; padding:6px 0;}
+
+  /* ---------- Buttons / forms ---------- */
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--ink); color:#fff; border:none;
+    padding:10px 16px; border-radius:8px; font-weight:700; font-size:13.5px;
+    cursor:pointer;
+  }
+  .btn:hover{background:var(--ink-soft);}
+  .btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line);}
+  .btn.ghost:hover{border-color:var(--ink);}
+  .btn.gold{background:var(--gold); color:#3A2A08;}
+  .btn.gold:hover{background:#AD7B22;}
+  .btn.small{padding:6px 11px; font-size:12.5px; border-radius:6px;}
+  .btn:disabled{opacity:.5; cursor:not-allowed;}
+
+  input[type=text], input[type=password], input[type=number], select, textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    font-family:var(--font-body); font-size:14px; background:#fff; color:var(--ink);
+  }
+  label{font-size:12.5px; font-weight:700; color:var(--slate); display:block; margin-bottom:5px;}
+  .field{margin-bottom:14px;}
+  .field-row{display:flex; gap:12px;}
+  .field-row .field{flex:1;}
+  .hint{font-size:12px; color:var(--slate); margin-top:5px;}
+
+  /* ---------- Subjects / videos ---------- */
+  .subject-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;}
+  .subject-tab{
+    padding:8px 14px; border-radius:20px; border:1px solid var(--line);
+    background:var(--paper-raised); cursor:pointer; font-size:13.5px; font-weight:700; color:var(--slate);
+  }
+  .subject-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .subject-topics{display:flex; gap:7px; flex-wrap:wrap; margin:-8px 0 20px;}
+  .topic-chip{font-size:11.5px; color:var(--slate); border:1px solid var(--line); background:var(--paper-raised); padding:5px 9px; border-radius:5px;}
+
+  /* ---------- Classroom / player ---------- */
+  .video-grid{display:block;}
+  .classroom{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(18,24,31,.07);}
+  .classroom-main{display:grid;grid-template-columns:minmax(0,1fr) 320px;background:#090c11;min-height:560px;}
+  .classroom-player{min-width:0;background:#000;display:flex;align-items:center;justify-content:center;position:relative;}
+  .classroom-player-shell{width:100%;height:100%;min-height:560px;background:#000;position:relative;}
+  .classroom-player-shell iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;}
+  .player-topbar{position:absolute;left:0;right:0;top:0;z-index:3;padding:12px 14px;display:flex;align-items:center;gap:10px;background:linear-gradient(rgba(0,0,0,.65),transparent);pointer-events:none;}
+  .player-badge{font-size:11px;font-weight:800;color:#fff;background:rgba(0,0,0,.52);padding:5px 8px;border-radius:6px;backdrop-filter:blur(4px);}
+  .player-tools{margin-left:auto;display:flex;gap:6px;pointer-events:auto;}
+  .player-tool{border:1px solid rgba(255,255,255,.18);background:rgba(15,18,24,.82);color:#fff;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:12px;}
+  .player-tool:hover{background:rgba(45,51,62,.92);}
+  .classroom-playlist{background:#11151b;color:#fff;display:flex;flex-direction:column;min-width:0;border-left:1px solid rgba(255,255,255,.08);}
+  .playlist-head{padding:14px 15px;border-bottom:1px solid rgba(255,255,255,.09);}
+  .playlist-head h3{color:#fff;margin:0 0 4px;font-size:14px;}
+  .playlist-head p{color:#aab2bf;font-size:11.5px;margin:0;}
+  .playlist-list{overflow:auto;max-height:560px;}
+  .lesson-item{display:flex;gap:9px;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;transition:.15s;background:transparent;}
+  .lesson-item:hover{background:#1a2029;}
+  .lesson-item.active{background:#252d39;box-shadow:inset 3px 0 0 var(--gold);}
+  .lesson-thumb{width:82px;height:46px;object-fit:cover;border-radius:5px;background:#000;flex:0 0 auto;}
+  .lesson-copy{min-width:0;flex:1;}
+  .lesson-title{font-size:11.5px;line-height:1.35;font-weight:700;color:#edf0f4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .lesson-status{font-size:10px;color:#8e98a7;margin-top:5px;}
+  .lesson-status.done{color:#7bc59a;}
+  .lesson-delete{border:0;background:transparent;color:#7f8997;cursor:pointer;padding:2px 4px;align-self:center;font-size:14px;}
+  .lesson-delete:hover{color:#f08a80;}
+  .classroom-info{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;padding:18px 20px;background:#fff;border-top:1px solid var(--line);}
+  .breadcrumbs{font-size:11px;color:var(--slate);margin-bottom:8px;display:flex;gap:7px;flex-wrap:wrap;}
+  .lesson-heading{font-size:20px;line-height:1.3;margin:0 0 7px;color:var(--ink);}
+  .lesson-submeta{font-size:12px;color:var(--slate);}
+  .lesson-controls{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px;}
+  .lesson-controls .btn{font-size:12px;padding:7px 10px;}
+  .lesson-ai{border-left:1px solid var(--line);padding-left:20px;}
+  .lesson-ai h4{margin:0 0 7px;font-size:13px;}
+  .lesson-ai p{font-size:11.5px;color:var(--slate);margin:0 0 9px;line-height:1.45;}
+  .lesson-ai-output{display:none;max-height:180px;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;line-height:1.5;white-space:pre-wrap;}
+  .lesson-ai-output.show{display:block;}
+  .classroom-empty{padding:45px 20px;text-align:center;color:var(--slate);background:#fff;border:1px dashed var(--line);border-radius:12px;}
+  .video-card.is-watched{border-color:var(--forest);}
+  .video-note{display:none;margin-top:10px;}
+  .video-note.show{display:block;}
+  .video-note textarea{min-height:72px;font-size:12.5px;resize:vertical;}
+  .video-meta{display:flex;gap:8px;align-items:center;margin-top:9px;}
+  .video-meta .btn{font-size:11.5px;padding:5px 8px;}
+  @media(max-width:900px){
+    .classroom-main{grid-template-columns:1fr;}
+    .classroom-player-shell{min-height:52vw;}
+    .classroom-playlist{border-left:0;border-top:1px solid rgba(255,255,255,.08);}
+    .playlist-list{max-height:300px;}
+    .classroom-info{grid-template-columns:1fr;}
+    .lesson-ai{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:15px;}
+  }
+  @media(max-width:600px){
+    .classroom-player-shell{min-height:58vw;}
+    .lesson-heading{font-size:17px;}
+    .classroom-info{padding:15px;}
+  }
+
+  .search-results{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+  .sr-item{display:flex; gap:12px; border:1px solid var(--line); border-radius:8px; padding:10px; background:#fff; align-items:center;}
+  .sr-item img{width:96px; height:54px; object-fit:cover; border-radius:5px; flex-shrink:0;}
+  .sr-info{flex:1; min-width:0;}
+  .sr-info b{font-size:13.5px; display:block; margin-bottom:3px;}
+  .sr-info span{font-size:12px; color:var(--slate);}
+  .sr-item .result-thumb{width:128px;height:72px;object-fit:cover;border-radius:5px;flex-shrink:0;background:#111;}
+  .sr-item .result-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+
+  /* ---------- Video player modal ---------- */
+  .video-modal{position:fixed;inset:0;z-index:9999;background:rgba(8,12,18,.92);display:none;align-items:center;justify-content:center;padding:18px;}
+  .video-modal.show{display:flex;}
+  .video-modal-panel{width:min(1200px,96vw);height:min(820px,92vh);display:flex;flex-direction:column;background:#0b0e13;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.45);}
+  .video-modal-head{display:flex;align-items:center;gap:10px;padding:10px 12px;color:#fff;background:#111722;}
+  .video-modal-title{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;}
+  .video-modal-actions{display:flex;gap:7px;}
+  .video-modal-actions button{border:1px solid rgba(255,255,255,.16);background:#1b2230;color:#fff;border-radius:8px;padding:7px 10px;cursor:pointer;}
+  .video-modal-frame{flex:1;min-height:0;background:#000;}
+  .video-modal-frame iframe{width:100%;height:100%;border:0;display:block;}
+  .video-danger{color:var(--brick)!important;}
+  .server-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--slate);margin-top:8px;}
+  .server-status .status-dot{margin:0;}
+  .status-dot.ok{background:var(--forest)!important;}
+  .status-dot.bad{background:var(--brick)!important;}
+  .video-card .video-meta{flex-wrap:wrap;}
+  @media(max-width:700px){.video-modal{padding:0}.video-modal-panel{width:100vw;height:100vh;border-radius:0}.video-modal-head{padding:8px}.video-modal-title{font-size:12px}}
+
+  /* ---------- Quiz ---------- */
+  .quiz-setup{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; margin-bottom:22px;}
+  .quiz-setup .field{min-width:170px; margin-bottom:0;}
+  .q-progress{font-size:12.5px; color:var(--slate); margin-bottom:14px; font-weight:700;}
+  .q-card{background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); padding:26px;}
+  .q-tag{display:inline-block; font-size:11.5px; font-weight:700; color:var(--gold); background:var(--gold-soft); padding:3px 10px; border-radius:20px; margin-bottom:12px;}
+  .q-text{font-size:18px; font-weight:600; margin-bottom:20px; line-height:1.45;}
+  .opt{
+    display:block; width:100%; text-align:left;
+    padding:13px 16px; margin-bottom:9px; border:1px solid var(--line); border-radius:8px;
+    background:#fff; cursor:pointer; font-size:14.5px; color:var(--ink); font-family:var(--font-body);
+  }
+  .opt:hover{border-color:var(--slate);}
+  .opt.correct{background:var(--forest-soft); border-color:var(--forest); font-weight:700;}
+  .opt.wrong{background:var(--brick-soft); border-color:var(--brick); font-weight:700;}
+  .explain{margin-top:16px; padding:14px 16px; background:var(--paper); border-radius:8px; font-size:13.5px; color:var(--ink-soft); border-left:3px solid var(--gold);}
+  .q-actions{margin-top:20px; display:flex; justify-content:flex-end; gap:10px;}
+  .result-card{text-align:center; padding:40px 20px;}
+  .result-card .big{font-family:var(--font-display); font-size:52px; margin-bottom:6px;}
+
+  /* ---------- AI panel ---------- */
+  .ai-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .ai-log{max-height:260px; overflow:auto;}
+  .status-line{display:flex; align-items:center; gap:8px; font-size:13px; margin-top:10px;}
+  .status-dot{width:8px; height:8px; border-radius:50%; background:var(--slate);}
+  .status-dot.on{background:var(--forest);}
+  .status-dot.off{background:var(--brick);}
+  .note-box{background:var(--paper); border:1px dashed var(--line); border-radius:8px; padding:14px 16px; font-size:13px; color:var(--ink-soft); margin-bottom:18px;}
+  .ai-full-card{background:var(--ink); color:#EDEFEA; border:none;}
+  .ai-full-card h3{color:#fff;}
+  .ai-full-card p{color:#B9C0CB; font-size:13.5px; line-height:1.55;}
+  .ai-full-card .field label{color:#B9C0CB;}
+  .generation-progress{display:none; margin-top:14px; color:#D9C48F; font-size:12.5px;}
+  .generation-progress.show{display:block;}
+
+  /* ---------- Settings ---------- */
+  .settings-block{margin-bottom:26px; padding-bottom:26px; border-bottom:1px solid var(--line);}
+  .settings-block:last-child{border-bottom:none;}
+  .danger{border-color:var(--brick); color:var(--brick);}
+  .danger:hover{background:var(--brick-soft);}
+
+  .subj-manage-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .subj-manage-row .trail-swatch{width:12px; height:12px;}
+  .subj-manage-row span{flex:1; font-weight:700; font-size:14px;}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:12px 20px; border-radius:8px;
+    font-size:13.5px; font-weight:600; z-index:100; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+
+  .bottomnav{display:none;}
+
+  @media (max-width: 860px){
+    .bento{grid-template-columns:1fr;}
+    .ai-grid{grid-template-columns:1fr;}
+  }
+
+  @media (max-width: 720px){
+    .sidebar{display:none;}
+    .main{margin-left:0;}
+    .content{padding:20px 16px 90px;}
+    .topbar{padding:14px 16px;}
+    .trail-switcher{min-width:0; flex:1; justify-content:flex-end;}
+    .trail-switcher label{display:none;}
+    #trailSelect{max-width:165px; overflow:hidden; text-overflow:ellipsis;}
+    .bottomnav{
+      display:flex; position:fixed; bottom:0; left:0; right:0; z-index:20;
+      background:var(--ink); padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+      justify-content:space-around;
+    }
+    .bottomnav button{
+      background:none; border:none; color:#9BA3AE; font-family:var(--font-body);
+      display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10.5px; font-weight:700;
+      padding:4px 6px; cursor:pointer;
+    }
+    .bottomnav button .dot{width:7px; height:7px; border-radius:50%; background:#4A5468;}
+    .bottomnav button.active{color:#fff;}
+    .bottomnav button.active .dot{background:var(--gold);}
+    .field-row{flex-direction:column; gap:0;}
+    .quiz-setup{flex-direction:column; align-items:stretch;}
+    .quiz-setup .field{min-width:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar (desktop) -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">Trilha</span>
+      <span class="brand-sub">estudos</span>
+    </div>
+    <nav class="trailnav" id="sideNav">
+      <button class="navitem" data-section="dashboard"><span class="dot"></span>Painel</button>
+      <button class="navitem" data-section="videos"><span class="dot"></span>Aulas</button>
+      <button class="navitem admin-only" data-section="admin"><span class="dot"></span>Gerenciar aulas</button>
+      <button class="navitem" data-section="quiz"><span class="dot"></span>Questões</button>
+      <button class="navitem" data-section="ai"><span class="dot"></span>Assistente IA</button>
+      <button class="navitem" data-section="settings"><span class="dot"></span>Ajustes</button>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="streak-pill">🔥 <span class="streak-num" id="streakNum">0</span> dias seguidos</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="profile-switch">
+        <div class="profile-avatar" id="profileAvatar">A</div>
+        <select id="profileSelect"></select>
+      </div>
+      <div class="trail-switcher">
+        <label for="trailSelect">Trilha</label>
+        <select id="trailSelect"></select>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="newProfileBtn" title="Novo perfil">＋</button>
+        <button class="icon-btn" id="exportBtn" title="Exportar progresso">⇩</button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- DASHBOARD -->
+      <section class="section" id="sec-dashboard">
+        <div class="page-head">
+          <h1>Bem-vindo de volta<span id="dashName"></span></h1>
+          <p>Este é o seu caminho até aqui — continue de onde parou.</p>
+        </div>
+
+        <div class="bento">
+          <div class="card hero">
+            <div>
+              <div class="cap">Progresso geral</div>
+              <div class="big" id="overallPct">0%</div>
+            </div>
+            <div class="stat-row">
+              <div class="stat"><b id="statVideos">0</b><span>aulas assistidas</span></div>
+              <div class="stat"><b id="statQuestions">0</b><span>questões respondidas</span></div>
+              <div class="stat"><b id="statAccuracy">0%</b><span>taxa de acerto</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Atividade recente</h3>
+            <div id="activityFeed"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Sua trilha por matéria</h3>
+          <div id="subjectTrail"></div>
+        </div>
+      </section>
+
+      <!-- VIDEOS -->
+      <section class="section" id="sec-videos">
+        <div class="page-head">
+          <h1>Aulas em vídeo</h1>
+          <p>Organizadas por matéria, com origem no YouTube.</p>
+        </div>
+
+        <div class="subject-tabs" id="videoSubjectTabs"></div>
+        <div class="subject-topics" id="subjectTopics"></div>
+
+        <div class="video-grid" id="videoGrid"></div>
+      </section>
+
+      <!-- ADMIN VIDEO MANAGEMENT -->
+      <section class="section" id="sec-admin">
+        <div class="page-head">
+          <h1>Gerenciar aulas</h1>
+          <p>Área exclusiva do perfil administrador para organizar o conteúdo da trilha.</p>
+        </div>
+        <div class="subject-tabs" id="adminSubjectTabs"></div>
+        <div class="card" style="margin-bottom:20px;">
+          <h3>Adicionar aula</h3>
+          <div class="field-row">
+            <div class="field">
+              <label>Link ou ID do vídeo no YouTube</label>
+              <input type="text" id="addVideoUrl" placeholder="https://youtube.com/watch?v=...">
+            </div>
+            <div class="field">
+              <label>Título da aula</label>
+              <input type="text" id="addVideoTitle" placeholder="Ex: Equações de 2º grau">
+            </div>
+          </div>
+          <button class="btn gold" id="addVideoBtn">Adicionar à trilha</button>
+          <div style="margin-top:18px; padding-top:18px; border-top:1px solid var(--line);">
+            <h3 style="margin-bottom:8px;">Explorar YouTube via InnerTube</h3>
+            <div class="subject-tabs" style="margin-bottom:12px;">
+              <button class="subject-tab active" id="innerTubeSearchTab">Pesquisa</button>
+              <button class="subject-tab" id="innerTubePlaylistTab">Playlist</button>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label id="innerTubeInputLabel">Pesquisar vídeos</label>
+                <input type="text" id="innerTubeInput" placeholder="Ex.: Técnico do Seguro Social INSS">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn gold" id="innerTubeSearchBtn">Pesquisar</button>
+              <button class="btn ghost" id="innerTubeAddAllBtn" style="display:none;">Adicionar todos</button>
+            </div>
+            <div class="hint">Usa um pequeno servidor local com InnerTube. Não precisa de chave da YouTube Data API para pesquisa e playlists públicas.</div>
+            <div class="search-results" id="innerTubeResults"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Aulas cadastradas nesta matéria</h3>
+          <div id="adminLessonList"></div>
+        </div>
+      </section>
+
+      <!-- QUIZ -->
+      <section class="section" id="sec-quiz">
+        <div class="page-head">
+          <h1>Questões</h1>
+          <p>Pratique e acompanhe seu desempenho por matéria.</p>
+        </div>
+
+        <div id="quizSetupWrap">
+          <div class="quiz-setup">
+            <div class="field">
+              <label>Matéria</label>
+              <select id="quizSubjectSelect"></select>
+            </div>
+            <div class="field">
+              <label>Quantidade</label>
+              <select id="quizCount">
+                <option value="5">5 questões</option>
+                <option value="10">10 questões</option>
+                <option value="999">Todas</option>
+              </select>
+            </div>
+            <button class="btn gold" id="startQuizBtn">Começar</button>
+          </div>
+
+          <div class="card" style="margin-bottom:16px;">
+            <h3>Banco de questões desta matéria</h3>
+            <div id="questionBankList"></div>
+            <button class="btn ghost small" id="addQuestionBtn" style="margin-top:10px;">+ Adicionar questão manualmente</button>
+          </div>
+        </div>
+
+        <div id="quizPlayWrap" style="display:none;">
+          <div class="q-progress" id="qProgress"></div>
+          <div class="q-card" id="qCard"></div>
+        </div>
+      </section>
+
+      <!-- AI -->
+      <section class="section" id="sec-ai">
+        <div class="page-head">
+          <h1>Assistente de IA</h1>
+          <p>Use o Gemini como tutor contextual: gere trilhas, questões, resumos e explicações.</p>
+        </div>
+
+        <div class="note-box">
+          Importante: uma página HTML rodando no navegador não consegue executar tarefas em segundo plano com a aba fechada, nem acessar a maioria dos sites diretamente (bloqueio de CORS). Por isso, o "bot diário" abaixo funciona assim: toda vez que você abre o Trilha, ele confere se já se passou um dia desde a última atualização e, se sim, chama o Gemini automaticamente para gerar questões novas. Para rodar de fato sem depender de abrir a página, seria necessário um pequeno servidor/agendador externo — posso te ajudar a montar isso à parte, se quiser.
+        </div>
+
+        <div class="ai-grid">
+          <div class="card ai-full-card">
+            <h3>Criar uma trilha completa com IA</h3>
+            <p>A IA organiza matérias, temas, aulas do YouTube e questões em uma sequência do básico ao avançado. Comece pelo plano pronto do INSS ou descreva outro objetivo.</p>
+            <div class="field">
+              <label>Concurso ou tema da nova trilha</label>
+              <input type="text" id="aiTrailName" value="Concurso INSS — Técnico do Seguro Social" placeholder="Ex: Analista de dados do zero">
+            </div>
+            <button class="btn gold" id="createTrailBtn">Criar trilha completa</button>
+            <div class="generation-progress" id="generationProgress">A IA está estruturando sua trilha…</div>
+          </div>
+          <div class="card">
+            <h3>Gerar questões com IA</h3>
+            <div class="field">
+              <label>Matéria</label>
+              <select id="aiSubjectSelect"></select>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>Quantas questões</label>
+                <input type="number" id="aiQtyInput" value="5" min="1" max="15">
+              </div>
+              <div class="field">
+                <label>Dificuldade</label>
+                <select id="aiDifficulty">
+                  <option value="fácil">Fácil</option>
+                  <option value="médio" selected>Médio</option>
+                  <option value="difícil">Difícil</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn gold" id="genQuestionsBtn">Gerar agora</button>
+            <div class="status-line"><span class="status-dot" id="geminiStatusDot"></span><span id="geminiStatusText">verificando chave de API…</span></div>
+          </div>
+
+          <div class="card">
+            <h3>Bot diário</h3>
+            <p style="font-size:13.5px; color:var(--slate); margin-top:0;">Gera novas questões automaticamente uma vez por dia (enquanto a página estiver aberta) para a matéria com menos questões.</p>
+            <div class="status-line"><span class="status-dot" id="botStatusDot"></span><span id="botStatusText"></span></div>
+            <button class="btn ghost small" id="runBotNowBtn" style="margin-top:14px;">Rodar bot agora</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <h3>Registro de atividade da IA</h3>
+          <div class="ai-log" id="aiLog"></div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="section" id="sec-settings">
+        <div class="page-head">
+          <h1>Ajustes</h1>
+          <p>Chaves de API, matérias e dados do seu progresso.</p>
+        </div>
+
+        <div class="settings-block">
+          <h3>Chave da API do Gemini</h3>
+          <div class="field">
+            <input type="password" id="geminiKeyInput" placeholder="Cole sua chave da Google AI Studio">
+          </div>
+          <div class="field">
+            <label>Nome do modelo</label>
+            <input type="text" id="geminiModelInput" placeholder="gemini-3.6-flash">
+            <div class="hint">Confirme o nome do modelo mais recente na documentação do Google AI Studio — a lista de modelos muda com frequência.</div>
+          </div>
+          <button class="btn ghost" id="saveGeminiBtn">Salvar chave local</button>
+          <div class="field" style="margin-top:12px;">
+            <label>Servidor Gemini (recomendado)</label>
+            <input type="text" id="geminiServerInput" placeholder="http://localhost:8787">
+            <div class="hint">Quando configurado no servidor com GEMINI_API_KEY, a chave não fica exposta no navegador.</div>
+          </div>
+          <button class="btn ghost small" id="saveGeminiServerBtn">Salvar servidor Gemini</button>
+          <div class="server-status"><span class="status-dot" id="geminiServerDot"></span><span id="geminiServerText">Verificando servidor…</span></div>
+        </div>
+
+        <div class="settings-block">
+          <h3>Chave da YouTube Data API</h3>
+          <div class="field">
+            <input type="password" id="ytKeyInput" placeholder="Cole sua chave da Google Cloud Console">
+          </div>          <button class="btn ghost" id="saveYtBtn">Salvar chave</button>
+          <div class="field" style="margin-top:12px;">
+            <label>Servidor InnerTube</label>
+            <input type="text" id="innerTubeEndpointInput" placeholder="http://localhost:8787">
+            <div class="hint">Servidor local que usa youtubei.js/InnerTube para pesquisar e carregar playlists públicas.</div>
+          </div>
+          <button class="btn ghost small" id="saveInnerTubeBtn">Salvar servidor InnerTube</button>
+          <div class="hint">A YouTube Data API permanece como fallback; a integração InnerTube não precisa de chave da Data API para essas operações.</div>
+        </div>
+
+        <div class="settings-block">
+          <h3>Matérias</h3>
+          <div id="subjManageList"></div>
+          <div class="field-row" style="margin-top:12px;">
+            <div class="field"><input type="text" id="newSubjectName" placeholder="Nova matéria"></div>
+          </div>
+          <button class="btn ghost small" id="addSubjectBtn">Adicionar matéria</button>
+        </div>
+
+        <div class="settings-block">
+          <h3>Dados</h3>
+          <p style="font-size:13.5px; color:var(--slate); margin-top:0;">Exporte um backup ou restaure a partir de um arquivo salvo anteriormente.</p>
+          <button class="btn ghost small" id="exportBtn2">Exportar backup (.json)</button>
+          <label class="btn ghost small" for="importFile" style="cursor:pointer; margin-left:8px;">Importar backup</label>
+          <input type="file" id="importFile" accept="application/json" style="display:none;">
+        </div>
+
+        <div class="settings-block">
+          <h3>Zona de risco</h3>
+          <button class="btn ghost danger" id="resetBtn">Apagar todos os dados deste navegador</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<nav class="bottomnav" id="bottomNav">
+  <button data-section="dashboard"><span class="dot"></span>Painel</button>
+  <button data-section="videos"><span class="dot"></span>Aulas</button>
+  <button class="admin-only" data-section="admin"><span class="dot"></span>Gerenciar</button>
+  <button data-section="quiz"><span class="dot"></span>Questões</button>
+  <button data-section="ai"><span class="dot"></span>IA</button>
+  <button data-section="settings"><span class="dot"></span>Ajustes</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "trilha_state_v1";
+  var DAY_MS = 24*60*60*1000;
+
+  var SWATCHES = ["#C08A28","#2F6B4F","#A1473F","#4C6FA8","#7A5AA6","#3A8FA0"];
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+
+  function seedState(){
+    return {
+      profiles: {
+        "Você": { role:"student", createdAt: Date.now(), streak: 0, lastActiveDay: null, watched: {}, answers: {}, xp: 0 },
+        "Admin": { role:"admin", createdAt: Date.now(), streak: 0, lastActiveDay: null, watched: {}, answers: {}, xp: 0 }
+      },
+      currentProfile: "Você",
+      subjects: [
+        { id:"mat", name:"Matemática", color:"#C08A28", videos:[], questions:[
+          mkQ("Qual é o resultado de 7 x 8?", ["54","56","64","48"], 1, "7 vezes 8 é 56."),
+          mkQ("Quanto é a raiz quadrada de 81?", ["8","9","7","10"], 1, "9 x 9 = 81."),
+          mkQ("Em uma equação de 2º grau ax²+bx+c=0, como se chama a fórmula usada para encontrar as raízes?", ["Fórmula de Bhaskara","Teorema de Pitágoras","Regra de três","Lei dos cossenos"], 0, "A fórmula de Bhaskara resolve equações do 2º grau.")
+        ]},
+        { id:"hist", name:"História", color:"#A1473F", videos:[], questions:[
+          mkQ("Em que ano começou a Segunda Guerra Mundial?", ["1935","1939","1941","1945"], 1, "A guerra começou em 1939, com a invasão da Polônia."),
+          mkQ("Quem proclamou a independência do Brasil?", ["Dom Pedro I","Tiradentes","Dom João VI","Getúlio Vargas"], 0, "Dom Pedro I proclamou a independência em 1822.")
+        ]},
+        { id:"ing", name:"Inglês", color:"#2F6B4F", videos:[], questions:[
+          mkQ("Qual é o passado do verbo 'go'?", ["Goed","Went","Gone","Going"], 1, "'Went' é o passado simples de 'go'."),
+          mkQ("Como se diz 'aprendizagem' em inglês?", ["Learning","Teaching","Reading","Speaking"], 0, "'Learning' significa aprendizagem.")
+        ]}
+      ],
+      settings: { geminiKey:"", geminiModel:"gemini-3.8-flash", geminiServerEndpoint:"http://localhost:8787", youtubeKey:"", innerTubeEndpoint:"http://localhost:8787", lastBotRun:0 },
+      activityLog: [
+        { date: Date.now(), type:"info", message:"Plataforma criada. Bem-vindo(a) ao Trilha!" }
+      ]
+    };
+  }
+
+  function mkQ(text, options, correctIndex, explanation){
+    return { id: uid(), question:text, options:options, correctIndex:correctIndex, explanation:explanation||"", addedBy:"seed" };
+  }
+
+  function makeInssSubjects(){
+    return [
+      { id:"seg", name:"Seguridade Social", color:"#C08A28", topics:["Conceitos fundamentais", "Princípios constitucionais", "Saúde, assistência e previdência", "Financiamento e controle"], videos:[], questions:[mkQ("Qual é uma das áreas que compõem a Seguridade Social no Brasil?", ["Educação", "Previdência Social", "Turismo", "Comércio exterior"], 1, "A Seguridade Social compreende Saúde, Previdência Social e Assistência Social.")] },
+      { id:"dirprev", name:"Direito Previdenciário", color:"#2F6B4F", topics:["Segurados e dependentes", "Benefícios do RGPS", "Carência e qualidade de segurado", "Custeio e revisão"], videos:[], questions:[mkQ("O que significa RGPS?", ["Regime Geral de Previdência Social", "Registro Geral de Pessoas Seguradas", "Regulamento Geral de Proteção Social", "Regime de Gestão Previdenciária Setorial"], 0, "RGPS é o Regime Geral de Previdência Social.")] },
+      { id:"port", name:"Língua Portuguesa", color:"#A1473F", topics:["Interpretação de textos", "Classes de palavras", "Sintaxe", "Redação oficial"], videos:[], questions:[mkQ("Em qual alternativa há uma palavra escrita de acordo com a norma-padrão?", ["Excessão", "Pretenção", "Exceção", "Acessão de dívida"], 2, "A grafia correta é exceção.")] },
+      { id:"const", name:"Direito Constitucional", color:"#4C6FA8", topics:["Direitos fundamentais", "Organização do Estado", "Administração pública", "Controle de constitucionalidade"], videos:[], questions:[mkQ("A Constituição Federal de 1988 é conhecida como:", ["Constituição Cidadã", "Constituição Imperial", "Carta do Estado Novo", "Constituição Provisória"], 0, "A Constituição de 1988 ficou conhecida como Constituição Cidadã.")] },
+      { id:"adm", name:"Direito Administrativo", color:"#7A5AA6", topics:["Princípios administrativos", "Atos administrativos", "Poderes da Administração", "Serviços públicos"], videos:[], questions:[mkQ("Qual princípio exige atuação conforme a lei?", ["Publicidade", "Legalidade", "Eficiência", "Moralidade"], 1, "O princípio da legalidade vincula a Administração Pública à lei.")] }
+    ];
+  }
+
+  function normalizeState(data){
+    data.profiles = data.profiles || {};
+    if(!data.profiles.Admin){
+      data.profiles.Admin = { role:"admin", createdAt:Date.now(), streak:0, lastActiveDay:null, watched:{}, answers:{}, xp:0 };
+    }
+    Object.keys(data.profiles || {}).forEach(function(name){
+      data.profiles[name].role = data.profiles[name].role || (name === "Admin" ? "admin" : "student");
+      data.profiles[name].watched = data.profiles[name].watched || {};
+      data.profiles[name].answers = data.profiles[name].answers || {};
+    });
+    if(!data.trails || !Array.isArray(data.trails) || data.trails.length===0){
+      if(data.subjects && data.subjects[0] && data.subjects[0].id==="mat") data.subjects = makeInssSubjects();
+      data.trails = [{ id:"trilha-inicial", name:"Minha trilha", description:"Plano de estudos", subjects:data.subjects||[] }];
+      data.trails[0].name = "INSS · Técnico do Seguro Social";
+      data.trails[0].description = "Do básico ao avançado para o concurso do INSS";
+    }
+    data.activeTrailId = data.activeTrailId || data.trails[0].id;
+    var active = data.trails.filter(function(t){ return t.id===data.activeTrailId; })[0] || data.trails[0];
+    data.activeTrailId = active.id;
+    data.subjects = active.subjects || [];
+    return data;
+  }
+
+  var state = load();
+  state.settings.geminiServerEndpoint = state.settings.geminiServerEndpoint || "http://localhost:8787";
+  state.settings.geminiModel = state.settings.geminiModel || "gemini-3.8-flash";
+  save();
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return normalizeState(seedState());
+      var parsed = JSON.parse(raw);
+      if(!parsed.subjects || !parsed.profiles) return normalizeState(seedState());
+      return normalizeState(parsed);
+    }catch(e){ return normalizeState(seedState()); }
+  }
+  function syncActiveTrail(){
+    if(!state.trails) return;
+    var active = state.trails.filter(function(t){ return t.id===state.activeTrailId; })[0];
+    if(active) active.subjects = state.subjects;
+  }
+  function save(){
+    syncActiveTrail();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  window.addEventListener("storage", function(event){
+    if(event.key !== STORAGE_KEY || !event.newValue) return;
+    try{
+      state = normalizeState(JSON.parse(event.newValue));
+      renderProfileSelect();
+      renderTrailSelect();
+      var active = document.querySelector(".section.active");
+      goTo(active ? active.id.replace("sec-", "") : "dashboard");
+      toast("Conteúdo atualizado pelo Admin.");
+    }catch(error){
+      console.warn("Não foi possível sincronizar os dados desta aba.", error);
+    }
+  });
+
+  function currentProfile(){ return state.profiles[state.currentProfile]; }
+  function isAdmin(){ return currentProfile() && currentProfile().role === "admin"; }
+
+  function touchStreak(){
+    var p = currentProfile();
+    var today = new Date().toDateString();
+    if(p.lastActiveDay === today) return;
+    var yesterday = new Date(Date.now()-DAY_MS).toDateString();
+    p.streak = (p.lastActiveDay === yesterday) ? (p.streak+1) : 1;
+    p.lastActiveDay = today;
+    save();
+  }
+
+  function log(type, message){
+    state.activityLog.unshift({date:Date.now(), type:type, message:message});
+    state.activityLog = state.activityLog.slice(0,60);
+    save();
+  }
+
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ t.classList.remove("show"); }, 2400);
+  }
+
+  function timeAgo(ts){
+    var diff = Date.now()-ts;
+    var m = Math.floor(diff/60000);
+    if(m<1) return "agora";
+    if(m<60) return m+"min atrás";
+    var h = Math.floor(m/60);
+    if(h<24) return h+"h atrás";
+    var d = Math.floor(h/24);
+    return d+"d atrás";
+  }
+
+  function extractYoutubeId(input){
+    input = input.trim();
+    if(/^[\w-]{11}$/.test(input)) return input;
+    var m = input.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  function subjectById(id){
+    return state.subjects.filter(function(s){ return s.id===id; })[0];
+  }
+
+  function renderTrailSelect(){
+    var select = document.getElementById("trailSelect");
+    if(!select) return;
+    select.innerHTML = state.trails.map(function(trail){
+      return '<option value="'+escapeHtml(trail.id)+'" '+(trail.id===state.activeTrailId?'selected':'')+'>'+escapeHtml(trail.name)+'</option>';
+    }).join("");
+  }
+
+  function switchTrail(id){
+    syncActiveTrail();
+    var next = state.trails.filter(function(trail){ return trail.id===id; })[0];
+    if(!next) return;
+    state.activeTrailId = next.id;
+    state.subjects = next.subjects || [];
+    save();
+    renderTrailSelect();
+    goTo("dashboard");
+    toast("Trilha "+next.name+" selecionada.");
+  }
+
+  /* ---------------- Navigation ---------------- */
+  var sections = ["dashboard","videos","admin","quiz","ai","settings"];
+  function goTo(sec){
+    if(sec === "admin" && !isAdmin()) sec = "videos";
+    sections.forEach(function(s){
+      document.getElementById("sec-"+s).classList.toggle("active", s===sec);
+    });
+    document.querySelectorAll(".navitem, .bottomnav button").forEach(function(el){
+      el.classList.toggle("active", el.getAttribute("data-section")===sec);
+    });
+    if(sec==="dashboard") renderDashboard();
+    if(sec==="videos") renderVideos();
+    if(sec==="admin") renderAdmin();
+    if(sec==="quiz") renderQuizSetup();
+    if(sec==="ai") renderAI();
+    if(sec==="settings") renderSettings();
+  }
+  document.querySelectorAll("[data-section]").forEach(function(btn){
+    btn.addEventListener("click", function(){ goTo(btn.getAttribute("data-section")); });
+  });
+
+  /* ---------------- Profile switcher ---------------- */
+  function renderProfileSelect(){
+    var sel = document.getElementById("profileSelect");
+    sel.innerHTML = "";
+    Object.keys(state.profiles).forEach(function(name){
+      var opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      if(name===state.currentProfile) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    document.getElementById("profileAvatar").textContent = state.currentProfile.charAt(0).toUpperCase();
+    document.getElementById("streakNum").textContent = currentProfile().streak;
+    document.body.classList.toggle("is-admin", isAdmin());
+  }
+  document.getElementById("profileSelect").addEventListener("change", function(e){
+    state.currentProfile = e.target.value;
+    save();
+    renderProfileSelect();
+    goTo(document.querySelector(".navitem.active").getAttribute("data-section"));
+  });
+  document.getElementById("newProfileBtn").addEventListener("click", function(){
+    var name = prompt("Nome do novo aluno(a):");
+    if(!name) return;
+    name = name.trim();
+    if(!name || state.profiles[name]) { toast("Nome inválido ou já existe."); return; }
+    state.profiles[name] = { role:"student", createdAt: Date.now(), streak:0, lastActiveDay:null, watched:{}, answers:{}, xp:0 };
+    state.currentProfile = name;
+    save();
+    renderProfileSelect();
+    goTo("dashboard");
+    toast("Perfil criado.");
+  });
+  document.getElementById("trailSelect").addEventListener("change", function(e){ switchTrail(e.target.value); });
+
+  /* ---------------- Dashboard ---------------- */
+  function renderDashboard(){
+    var p = currentProfile();
+    document.getElementById("dashName").textContent = ", " + state.currentProfile;
+    document.getElementById("streakNum").textContent = p.streak;
+
+    var totalVideos = 0, watchedVideos = 0, totalQ = 0, answered = 0, correct = 0;
+    state.subjects.forEach(function(s){
+      totalVideos += s.videos.length;
+      s.videos.forEach(function(v){ if(p.watched[v.id]) watchedVideos++; });
+      totalQ += s.questions.length;
+    });
+    Object.keys(p.answers).forEach(function(qid){
+      answered++;
+      if(p.answers[qid].correct) correct++;
+    });
+
+    var overall = (totalVideos+totalQ)>0 ? Math.round(((watchedVideos+answered)/(totalVideos+totalQ))*100) : 0;
+    document.getElementById("overallPct").textContent = overall+"%";
+    document.getElementById("statVideos").textContent = watchedVideos;
+    document.getElementById("statQuestions").textContent = answered;
+    document.getElementById("statAccuracy").textContent = answered>0 ? Math.round((correct/answered)*100)+"%" : "—";
+
+    var feed = document.getElementById("activityFeed");
+    if(state.activityLog.length===0){
+      feed.innerHTML = '<div class="empty-note">Nenhuma atividade ainda.</div>';
+    }else{
+      feed.innerHTML = state.activityLog.slice(0,6).map(function(item){
+        return '<div class="feed-item"><span class="feed-dot"></span><div><div>'+escapeHtml(item.message)+'</div><div class="feed-time">'+timeAgo(item.date)+'</div></div></div>';
+      }).join("");
+    }
+
+    var trail = document.getElementById("subjectTrail");
+    trail.innerHTML = state.subjects.map(function(s){
+      var vTotal = s.videos.length, vDone = s.videos.filter(function(v){return p.watched[v.id];}).length;
+      var qTotal = s.questions.length, qDone = s.questions.filter(function(q){return p.answers[q.id];}).length;
+      var tot = vTotal+qTotal, done = vDone+qDone;
+      var pct = tot>0 ? Math.round((done/tot)*100) : 0;
+      return '<div class="trail-row">'+
+        '<span class="trail-swatch" style="background:'+s.color+'"></span>'+
+        '<span class="trail-name">'+escapeHtml(s.name)+'</span>'+
+        '<div class="trail-track"><div class="trail-fill" style="width:'+pct+'%; background:'+s.color+'"></div></div>'+
+        '<span class="trail-pct">'+pct+'%</span></div>';
+    }).join("") || '<div class="empty-note">Adicione uma matéria em Ajustes.</div>';
+  }
+
+  function escapeHtml(str){
+    var d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  /* ---------------- Videos ---------------- */
+  var activeVideoSubject = null;
+
+  function renderVideoSubjectTabs(){
+    var wrap = document.getElementById("videoSubjectTabs");
+    if(!activeVideoSubject && state.subjects[0]) activeVideoSubject = state.subjects[0].id;
+    wrap.innerHTML = state.subjects.map(function(s){
+      return '<button class="subject-tab'+(s.id===activeVideoSubject?' active':'')+'" data-id="'+s.id+'">'+escapeHtml(s.name)+'</button>';
+    }).join("");
+    wrap.querySelectorAll(".subject-tab").forEach(function(btn){
+      btn.addEventListener("click", function(){ activeVideoSubject = btn.getAttribute("data-id"); renderVideos(); });
+    });
+  }
+
+  function renderAdminSubjectTabs(){
+    var wrap = document.getElementById("adminSubjectTabs");
+    if(!wrap) return;
+    if(!activeVideoSubject && state.subjects[0]) activeVideoSubject = state.subjects[0].id;
+    wrap.innerHTML = state.subjects.map(function(s){
+      return '<button class="subject-tab'+(s.id===activeVideoSubject?' active':'')+'" data-id="'+s.id+'">'+escapeHtml(s.name)+'</button>';
+    }).join("");
+    wrap.querySelectorAll(".subject-tab").forEach(function(btn){
+      btn.addEventListener("click", function(){ activeVideoSubject = btn.getAttribute("data-id"); renderAdmin(); });
+    });
+  }
+
+  var activeLessonId = null;
+
+  function renderVideos(){
+    renderVideoSubjectTabs();
+    populateSelect(document.getElementById("quizSubjectSelect"));
+    var s = subjectById(activeVideoSubject);
+    var p = currentProfile();
+    var grid = document.getElementById("videoGrid");
+    var topics = document.getElementById("subjectTopics");
+
+    if(!s){
+      grid.innerHTML = '<div class="classroom-empty">Crie ou selecione uma matéria para começar.</div>';
+      return;
+    }
+
+    topics.innerHTML = (s.topics||[]).map(function(topic,index){
+      return '<span class="topic-chip">'+(index+1)+". "+escapeHtml(topic)+'</span>';
+    }).join("");
+
+    if(!s.videos || s.videos.length===0){
+      activeLessonId = null;
+      grid.innerHTML = '<div class="classroom-empty"><strong>Nenhuma aula nesta matéria ainda.</strong><br><span>O administrador ainda não adicionou conteúdo a esta matéria.</span></div>';
+      return;
+    }
+
+    if(!activeLessonId || !s.videos.some(function(v){return v.id===activeLessonId;})){
+      activeLessonId = s.videos[0].id;
+    }
+
+    var current = s.videos.filter(function(v){return v.id===activeLessonId;})[0] || s.videos[0];
+    activeLessonId = current.id;
+
+    var watched = !!p.watched[current.id];
+    var note = p.notes && p.notes[current.id] ? p.notes[current.id] : "";
+    var idx = s.videos.findIndex(function(v){return v.id===current.id;});
+    var prev = idx>0 ? s.videos[idx-1] : null;
+    var next = idx<s.videos.length-1 ? s.videos[idx+1] : null;
+
+    var playlistHtml = s.videos.map(function(v,i){
+      var done = !!p.watched[v.id];
+      return '<div class="lesson-item '+(v.id===current.id?'active':'')+'" data-lesson="'+v.id+'">'+
+        '<img class="lesson-thumb" src="https://i.ytimg.com/vi/'+encodeURIComponent(v.ytId)+'/mqdefault.jpg" alt="">'+
+        '<div class="lesson-copy"><div class="lesson-title">'+escapeHtml((i+1)+". "+v.title)+'</div>'+
+        '<div class="lesson-status '+(done?'done':'')+'">'+(done?'✓ Assistida':'Aula '+(i+1)+' de '+s.videos.length)+'</div></div>'+
+        ''+
+      '</div>';
+    }).join("");
+
+    grid.innerHTML =
+      '<div class="classroom" id="classroom">'+
+        '<div class="classroom-main">'+
+          '<div class="classroom-player">'+
+            '<div class="classroom-player-shell" id="playerShell">'+
+              '<div class="player-topbar">'+
+                '<span class="player-badge">'+escapeHtml(s.name)+'</span>'+
+                '<div class="player-tools">'+
+                  '<button class="player-tool" id="classroomFullscreen" title="Tela cheia">⛶ Tela cheia</button>'+
+                '</div>'+
+              '</div>'+
+              '<iframe id="lessonFrame" src="https://www.youtube.com/embed/'+encodeURIComponent(current.ytId)+'?autoplay=0&rel=0&modestbranding=1&playsinline=1" title="'+escapeHtml(current.title)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>'+ 
+            '</div>'+
+          '</div>'+
+          '<aside class="classroom-playlist">'+
+            '<div class="playlist-head"><h3>Conteúdo da aula</h3><p>'+s.videos.length+' aulas nesta matéria</p></div>'+
+            '<div class="playlist-list">'+playlistHtml+'</div>'+
+          '</aside>'+
+        '</div>'+
+        '<div class="classroom-info">'+
+          '<div>'+
+            '<div class="breadcrumbs"><span>Trilha</span><span>›</span><span>'+escapeHtml(s.name)+'</span><span>›</span><span>Aulas</span></div>'+
+            '<h2 class="lesson-heading">'+escapeHtml(current.title)+'</h2>'+
+            '<div class="lesson-submeta">'+
+              (current.author ? escapeHtml(current.author)+' · ' : '')+
+              (current.duration ? escapeHtml(current.duration)+' · ' : '')+
+              (watched ? 'Assistida' : 'Não concluída')+
+            '</div>'+
+            '<div class="lesson-controls">'+
+              '<button class="btn '+(watched?'ghost':'gold')+'" id="markLessonBtn">'+(watched?'✓ Aula assistida':'Marcar como assistida')+'</button>'+
+              '<button class="btn ghost" id="lessonNoteBtn">'+(note?'📝 Editar anotação':'📝 Anotar aula')+'</button>'+
+              '<button class="btn ghost" id="prevLessonBtn" '+(!prev?'disabled':'')+'>← Anterior</button>'+
+              '<button class="btn ghost" id="nextLessonBtn" '+(!next?'disabled':'')+'>Próxima →</button>'+
+            '</div>'+
+            '<div class="video-note '+(note?'show':'')+'" id="activeNoteBox">'+
+              '<textarea id="activeLessonNote" placeholder="Escreva uma anotação para revisar depois…">'+escapeHtml(note)+'</textarea>'+
+            '</div>'+
+          '</div>'+
+          '<div class="lesson-ai">'+
+            '<h4>🤖 Estude esta aula com o Gemini</h4>'+
+            '<p>Peça uma explicação, resumo ou questões usando o título e o contexto desta aula.</p>'+
+            '<button class="btn ghost small" id="askLessonAiBtn">✨ Explicar aula</button>'+
+            '<button class="btn ghost small" id="quizLessonAiBtn">⚡ Criar questões</button>'+
+            '<div class="lesson-ai-output" id="lessonAiOutput"></div>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+
+    grid.querySelectorAll("[data-lesson]").forEach(function(item){
+      item.addEventListener("click",function(e){
+        if(e.target.closest("[data-delete-lesson]")) return;
+        activeLessonId = item.getAttribute("data-lesson");
+        renderVideos();
+      });
+    });
+
+    grid.querySelectorAll("[data-delete-lesson]").forEach(function(btn){
+      btn.addEventListener("click",function(e){
+        e.stopPropagation();
+        var vid=btn.getAttribute("data-delete-lesson");
+        var target=(s.videos||[]).filter(function(v){return v.id===vid;})[0];
+        if(!target) return;
+        if(!confirm('Apagar a aula "'+target.title+'"?')) return;
+        s.videos=s.videos.filter(function(v){return v.id!==vid;});
+        delete p.watched[vid];
+        if(p.notes) delete p.notes[vid];
+        activeLessonId = s.videos.length ? (s.videos[Math.min(idx,s.videos.length-1)]||s.videos[0]).id : null;
+        save();
+        log("video","Aula apagada: "+target.title);
+        renderVideos();
+        renderDashboard();
+        toast("Aula apagada.");
+      });
+    });
+
+    document.getElementById("classroomFullscreen").addEventListener("click",function(){
+      var shell=document.getElementById("playerShell");
+      if(document.fullscreenElement){ document.exitFullscreen(); }
+      else if(shell.requestFullscreen){ shell.requestFullscreen(); }
+    });
+
+    document.getElementById("markLessonBtn").addEventListener("click",function(){
+      if(p.watched[current.id]) delete p.watched[current.id];
+      else { p.watched[current.id]=true; touchStreak(); }
+      save(); renderVideos(); renderDashboard();
+    });
+
+    document.getElementById("prevLessonBtn").addEventListener("click",function(){
+      if(prev){ activeLessonId=prev.id; renderVideos(); }
+    });
+    document.getElementById("nextLessonBtn").addEventListener("click",function(){
+      if(next){ activeLessonId=next.id; renderVideos(); }
+    });
+
+    document.getElementById("lessonNoteBtn").addEventListener("click",function(){
+      var box=document.getElementById("activeNoteBox");
+      box.classList.toggle("show");
+      if(box.classList.contains("show")) document.getElementById("activeLessonNote").focus();
+    });
+
+    document.getElementById("activeLessonNote").addEventListener("input",function(){
+      p.notes=p.notes||{};
+      if(this.value.trim()) p.notes[current.id]=this.value;
+      else delete p.notes[current.id];
+      save();
+    });
+
+    function askLessonGemini(mode){
+      var out=document.getElementById("lessonAiOutput");
+      out.classList.add("show");
+      out.textContent="Consultando o Gemini…";
+      var instruction = mode==="quiz"
+        ? "Crie 5 questões de múltipla escolha em português sobre esta aula, com 4 alternativas, indique a resposta correta e explique cada resposta."
+        : "Explique esta aula em linguagem clara para um estudante, faça um resumo em tópicos e destaque o que é mais importante revisar.";
+      var prompt="Você é o tutor da plataforma Trilha. Matéria: "+s.name+". Aula: "+current.title+". "+instruction+
+        " Não invente detalhes específicos que não estejam disponíveis; deixe claro quando o conteúdo exato da aula não foi fornecido.";
+      callGemini(prompt).then(function(text){ out.textContent=text; }).catch(function(err){
+        out.textContent="Não foi possível consultar o Gemini: "+err.message;
+      });
+    }
+    document.getElementById("askLessonAiBtn").addEventListener("click",function(){askLessonGemini("explain");});
+    document.getElementById("quizLessonAiBtn").addEventListener("click",function(){askLessonGemini("quiz");});
+  }
+
+  function renderAdmin(){
+    if(!isAdmin()) return;
+    renderAdminSubjectTabs();
+    var subject = subjectById(activeVideoSubject);
+    var list = document.getElementById("adminLessonList");
+    if(!subject){ list.innerHTML = '<div class="empty-note">Crie ou selecione uma matéria.</div>'; return; }
+    list.innerHTML = subject.videos.length ? subject.videos.map(function(video, index){
+      return '<div class="trail-row"><span class="trail-swatch" style="background:'+subject.color+'"></span><span class="trail-name">'+escapeHtml((index+1)+". "+video.title)+'</span><button class="btn ghost small" data-admin-delete="'+video.id+'">Apagar</button></div>';
+    }).join("") : '<div class="empty-note">Nenhuma aula cadastrada nesta matéria.</div>';
+    list.querySelectorAll("[data-admin-delete]").forEach(function(button){
+      button.addEventListener("click", function(){
+        var id = button.getAttribute("data-admin-delete");
+        var video = subject.videos.filter(function(item){ return item.id === id; })[0];
+        if(!video || !confirm('Apagar a aula "'+video.title+'"?')) return;
+        subject.videos = subject.videos.filter(function(item){ return item.id !== id; });
+        Object.keys(state.profiles).forEach(function(name){
+          delete state.profiles[name].watched[id];
+          if(state.profiles[name].notes) delete state.profiles[name].notes[id];
+        });
+        save(); renderAdmin(); renderVideos(); renderDashboard(); toast("Aula apagada.");
+      });
+    });
+  }
+
+  document.getElementById("addVideoBtn").addEventListener("click", function(){
+    if(!isAdmin()){ toast("Apenas o perfil Admin pode adicionar aulas."); return; }
+    var url = document.getElementById("addVideoUrl").value;
+    var title = document.getElementById("addVideoTitle").value.trim();
+    var ytId = extractYoutubeId(url);
+    if(!ytId){ toast("Link ou ID do YouTube inválido."); return; }
+    if(!title){ toast("Dê um título para a aula."); return; }
+    var s = subjectById(activeVideoSubject);
+    if(!s){ toast("Escolha uma matéria."); return; }
+    s.videos.push({ id: uid(), ytId: ytId, title: title, addedBy:"manual" }); activeLessonId = s.videos[s.videos.length-1].id;
+    save();
+    document.getElementById("addVideoUrl").value = "";
+    document.getElementById("addVideoTitle").value = "";
+    renderAdmin();
+    toast("Aula adicionada.");
+  });
+
+  /* ---------------- InnerTube YouTube browser ---------------- */
+  var innerTubeMode = "search";
+  var innerTubeLastItems = [];
+  var innerTubePlaylistMeta = null;
+
+  function innerTubeEndpoint(path, params){
+    var base = (state.settings.innerTubeEndpoint || "http://localhost:8787").replace(/\/+$/,"");
+    var qs = Object.keys(params || {}).map(function(k){
+      return encodeURIComponent(k)+"="+encodeURIComponent(params[k]);
+    }).join("&");
+    return base + path + (qs ? "?" + qs : "");
+  }
+
+  function addInnerTubeVideo(item, subject, playlistMeta, playlistIndex){
+    if(!isAdmin()) return false;
+    if(!subject || !item || !item.id) return false;
+    if(subject.videos.some(function(v){ return v.ytId === item.id; })) return false;
+    subject.videos.push({
+      id:uid(), ytId:item.id, title:String(item.title||"Aula"), addedBy:"innertube",
+      playlistTitle: playlistMeta ? String(playlistMeta.title || "") : "",
+      playlistIndex: typeof playlistIndex === "number" ? playlistIndex : null
+    });
+    return true;
+  }
+
+  function renderInnerTubeResults(items, playlistMeta){
+    var box = document.getElementById("innerTubeResults");
+    var addAll = document.getElementById("innerTubeAddAllBtn");
+    innerTubeLastItems = items || [];
+    innerTubePlaylistMeta = playlistMeta || null;
+    addAll.style.display = innerTubeLastItems.length ? "" : "none";
+    if(!innerTubeLastItems.length){
+      box.innerHTML = '<div class="empty-note">Nenhum resultado encontrado.</div>';
+      return;
+    }
+    box.innerHTML = (playlistMeta ? '<div class="note-box" style="margin-bottom:10px;"><b>'+escapeHtml(playlistMeta.title||"Playlist")+'</b><br><span>'+escapeHtml(playlistMeta.description||"")+'</span></div>' : '') +
+      innerTubeLastItems.map(function(item){
+        var thumb = item.thumbnail || ("https://i.ytimg.com/vi/"+item.id+"/hqdefault.jpg");
+        var meta = [item.author, item.duration].filter(Boolean).join(" · ");
+        return '<div class="sr-item"><img class="result-thumb" src="'+escapeHtml(thumb)+'" alt=""><div class="sr-info"><b>'+escapeHtml(item.title||"Sem título")+'</b><span>'+escapeHtml(meta)+'</span></div><div class="result-actions"><button class="btn small ghost" data-inner-vid="'+escapeHtml(item.id)+'">Adicionar</button></div></div>';
+      }).join("");
+    box.querySelectorAll("button[data-inner-vid]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var item = innerTubeLastItems.filter(function(x){ return x.id === btn.getAttribute("data-inner-vid"); })[0];
+        var s = subjectById(activeVideoSubject);
+        if(addInnerTubeVideo(item,s,playlistMeta,null)){ save(); renderAdmin(); renderVideos(); toast("Aula adicionada à trilha."); }
+        else toast("Essa aula já está na matéria.");
+      });
+    });
+  }
+
+  function runInnerTube(){
+    if(!isAdmin()){ toast("Apenas o perfil Admin pode pesquisar aulas."); return; }
+    var input = document.getElementById("innerTubeInput").value.trim();
+    var box = document.getElementById("innerTubeResults");
+    if(!input){ toast("Digite uma pesquisa ou URL de playlist."); return; }
+    box.innerHTML = '<div class="empty-note">Consultando InnerTube…</div>';
+    document.getElementById("innerTubeAddAllBtn").style.display = "none";
+    var endpoint = innerTubeMode === "playlist" ? "/api/youtube/playlist" : "/api/youtube/search";
+    var params = innerTubeMode === "playlist" ? {url:input} : {q:input,filter:"video"};
+    fetch(innerTubeEndpoint(endpoint,params))
+      .then(function(r){ return r.json().then(function(data){ return {ok:r.ok,data:data}; }); })
+      .then(function(result){
+        if(!result.ok || result.data.error) throw new Error(result.data.error || "Falha no servidor InnerTube.");
+        renderInnerTubeResults(result.data.items||[], result.data.playlist||null);
+      })
+      .catch(function(err){
+        box.innerHTML = '<div class="empty-note">InnerTube indisponível: '+escapeHtml(err.message)+'. Inicie o servidor com <code>npm install</code> e <code>npm start</code>.</div>';
+      });
+  }
+
+  document.getElementById("innerTubeSearchBtn").addEventListener("click", runInnerTube);
+  document.getElementById("innerTubeInput").addEventListener("keydown", function(e){ if(e.key==="Enter") runInnerTube(); });
+
+  document.getElementById("innerTubeSearchTab").addEventListener("click", function(){
+    innerTubeMode="search";
+    document.getElementById("innerTubeSearchTab").classList.add("active");
+    document.getElementById("innerTubePlaylistTab").classList.remove("active");
+    document.getElementById("innerTubeInputLabel").textContent="Pesquisar vídeos";
+    document.getElementById("innerTubeInput").placeholder="Ex.: Técnico do Seguro Social INSS";
+    document.getElementById("innerTubeSearchBtn").textContent="Pesquisar";
+    innerTubePlaylistMeta = null;
+    document.getElementById("innerTubeResults").innerHTML="";
+    document.getElementById("innerTubeAddAllBtn").style.display="none";
+  });
+
+  document.getElementById("innerTubePlaylistTab").addEventListener("click", function(){
+    innerTubeMode="playlist";
+    document.getElementById("innerTubePlaylistTab").classList.add("active");
+    document.getElementById("innerTubeSearchTab").classList.remove("active");
+    document.getElementById("innerTubeInputLabel").textContent="URL ou ID da playlist";
+    document.getElementById("innerTubeInput").placeholder="https://www.youtube.com/playlist?list=...";
+    document.getElementById("innerTubeSearchBtn").textContent="Carregar playlist";
+    innerTubePlaylistMeta = null;
+    document.getElementById("innerTubeResults").innerHTML="";
+    document.getElementById("innerTubeAddAllBtn").style.display="none";
+  });
+
+  document.getElementById("innerTubeAddAllBtn").addEventListener("click", function(){
+    if(!isAdmin()) return;
+    var s=subjectById(activeVideoSubject);
+    if(!s || !innerTubeLastItems.length) return;
+    var added=0;
+    innerTubeLastItems.forEach(function(item, index){ if(addInnerTubeVideo(item,s,innerTubePlaylistMeta,index)) added++; });
+    s.videos.sort(function(a,b){
+      if(a.playlistIndex === null || b.playlistIndex === null) return 0;
+      return a.playlistIndex - b.playlistIndex;
+    });
+    save(); renderAdmin(); renderVideos(); toast(added+" aula(s) adicionada(s).");
+  });
+
+  /* Official YouTube Data API fallback. */
+  var ytSearchBtn = document.getElementById("ytSearchBtn");
+  if(ytSearchBtn) ytSearchBtn.addEventListener("click", function(){
+    var q=document.getElementById("ytSearchInput").value.trim();
+    if(!q) return;
+    if(!state.settings.youtubeKey){ toast("Configure a chave da YouTube API em Ajustes."); return; }
+    var url="https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=8&q="+encodeURIComponent(q)+"&key="+state.settings.youtubeKey;
+    var box=document.getElementById("ytResults");
+    box.innerHTML='<div class="empty-note">Buscando…</div>';
+    fetch(url).then(function(r){return r.json();}).then(function(data){
+      if(data.error){box.innerHTML='<div class="empty-note">Erro: '+escapeHtml(data.error.message||"falha na busca")+'</div>';return;}
+      var items=data.items||[];
+      if(!items.length){box.innerHTML='<div class="empty-note">Nenhum resultado.</div>';return;}
+      box.innerHTML=items.map(function(it){
+        var vid=it.id.videoId, thumb=it.snippet.thumbnails&&it.snippet.thumbnails.default?it.snippet.thumbnails.default.url:"", title=it.snippet.title;
+        return '<div class="sr-item"><img src="'+thumb+'" alt=""><div class="sr-info"><b>'+escapeHtml(title)+'</b><span>'+escapeHtml(it.snippet.channelTitle||"")+'</span></div><button class="btn small ghost" data-vid="'+vid+'" data-title="'+escapeHtml(title).replace(/"/g,'&quot;')+'">Adicionar</button></div>';
+      }).join("");
+      box.querySelectorAll("button[data-vid]").forEach(function(btn){
+        btn.addEventListener("click",function(){
+          var s=subjectById(activeVideoSubject);
+          if(!s)return;
+          s.videos.push({id:uid(),ytId:btn.getAttribute("data-vid"),title:btn.getAttribute("data-title"),addedBy:"youtube-search"});
+          save();renderVideos();toast("Aula adicionada à trilha.");
+        });
+      });
+    }).catch(function(){box.innerHTML='<div class="empty-note">Não foi possível buscar agora.</div>';});
+  });
+
+
+  /* ---------------- Quiz ---------------- */
+  var quizState = null;
+
+  function populateSelect(sel){
+    var current = sel.value;
+    sel.innerHTML = state.subjects.map(function(s){ return '<option value="'+s.id+'">'+escapeHtml(s.name)+'</option>'; }).join("");
+    if(current) sel.value = current;
+  }
+
+  function renderQuizSetup(){
+    populateSelect(document.getElementById("quizSubjectSelect"));
+    populateSelect(document.getElementById("aiSubjectSelect"));
+    document.getElementById("quizSetupWrap").style.display = "";
+    document.getElementById("quizPlayWrap").style.display = "none";
+    renderQuestionBank();
+  }
+
+  function renderQuestionBank(){
+    var s = subjectById(document.getElementById("quizSubjectSelect").value);
+    var box = document.getElementById("questionBankList");
+    if(!s || s.questions.length===0){ box.innerHTML = '<div class="empty-note">Nenhuma questão nesta matéria ainda.</div>'; return; }
+    box.innerHTML = s.questions.map(function(q,i){
+      return '<div class="feed-item"><span class="feed-dot"></span><div style="flex:1"><div>'+(i+1)+'. '+escapeHtml(q.question)+'</div>'+
+        '<div class="feed-time">'+(q.addedBy==='ia'?'gerada por IA':(q.addedBy==='manual'?'adicionada por você':'exemplo'))+'</div></div>'+
+        '<button class="btn small ghost" data-del="'+q.id+'">Remover</button></div>';
+    }).join("");
+    box.querySelectorAll("button[data-del]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        s.questions = s.questions.filter(function(q){ return q.id !== btn.getAttribute("data-del"); });
+        save();
+        renderQuestionBank();
+      });
+    });
+  }
+  document.getElementById("quizSubjectSelect").addEventListener("change", renderQuestionBank);
+
+  document.getElementById("addQuestionBtn").addEventListener("click", function(){
+    var s = subjectById(document.getElementById("quizSubjectSelect").value);
+    if(!s) return;
+    var question = prompt("Texto da pergunta:");
+    if(!question) return;
+    var opts = [];
+    for(var i=1;i<=4;i++){
+      var o = prompt("Alternativa "+i+":");
+      if(!o) { toast("Cancelado — preencha as 4 alternativas."); return; }
+      opts.push(o);
+    }
+    var correct = prompt("Qual o número da alternativa correta? (1 a 4)");
+    var idx = parseInt(correct,10)-1;
+    if(isNaN(idx) || idx<0 || idx>3){ toast("Número inválido."); return; }
+    var explanation = prompt("Explicação (opcional):") || "";
+    s.questions.push({ id: uid(), question:question, options:opts, correctIndex:idx, explanation:explanation, addedBy:"manual" });
+    save();
+    renderQuestionBank();
+    toast("Questão adicionada.");
+  });
+
+  document.getElementById("startQuizBtn").addEventListener("click", function(){
+    var s = subjectById(document.getElementById("quizSubjectSelect").value);
+    if(!s || s.questions.length===0){ toast("Esta matéria não tem questões ainda."); return; }
+    var count = parseInt(document.getElementById("quizCount").value,10);
+    var pool = s.questions.slice().sort(function(){return Math.random()-0.5;}).slice(0, count);
+    quizState = { subject:s, questions:pool, index:0, correctCount:0, answered:false };
+    document.getElementById("quizSetupWrap").style.display = "none";
+    document.getElementById("quizPlayWrap").style.display = "";
+    renderQuizQuestion();
+  });
+
+  function renderQuizQuestion(){
+    if(quizState.index >= quizState.questions.length){ renderQuizResult(); return; }
+    var q = quizState.questions[quizState.index];
+    quizState.answered = false;
+    document.getElementById("qProgress").textContent = "Questão "+(quizState.index+1)+" de "+quizState.questions.length+" — "+quizState.subject.name;
+    var card = document.getElementById("qCard");
+    card.innerHTML = '<span class="q-tag">'+escapeHtml(quizState.subject.name)+'</span>'+
+      '<div class="q-text">'+escapeHtml(q.question)+'</div>'+
+      q.options.map(function(opt,i){ return '<button class="opt" data-i="'+i+'">'+escapeHtml(opt)+'</button>'; }).join("")+
+      '<div id="qExplain"></div>'+
+      '<div class="q-actions"><button class="btn ghost" id="qNextBtn" style="display:none;">Próxima</button></div>';
+    card.querySelectorAll(".opt").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        if(quizState.answered) return;
+        quizState.answered = true;
+        var chosen = parseInt(btn.getAttribute("data-i"),10);
+        var isCorrect = chosen === q.correctIndex;
+        var p = currentProfile();
+        p.answers[q.id] = { chosen:chosen, correct:isCorrect, date:Date.now() };
+        if(isCorrect){ quizState.correctCount++; p.xp += 10; } else { p.xp += 2; }
+        touchStreak();
+        save();
+        card.querySelectorAll(".opt").forEach(function(b,i){
+          b.disabled = true;
+          if(i===q.correctIndex) b.classList.add("correct");
+          else if(i===chosen) b.classList.add("wrong");
+        });
+        if(q.explanation){
+          document.getElementById("qExplain").innerHTML = '<div class="explain">'+escapeHtml(q.explanation)+'</div>';
+        }
+        document.getElementById("qNextBtn").style.display = "";
+      });
+    });
+    document.getElementById("qNextBtn").addEventListener("click", function(){
+      quizState.index++;
+      renderQuizQuestion();
+    });
+  }
+
+  function renderQuizResult(){
+    document.getElementById("qProgress").textContent = "";
+    var pct = Math.round((quizState.correctCount/quizState.questions.length)*100);
+    document.getElementById("qCard").innerHTML =
+      '<div class="result-card"><div class="big">'+pct+'%</div>'+
+      '<div style="color:var(--slate); margin-bottom:20px;">Você acertou '+quizState.correctCount+' de '+quizState.questions.length+' questões.</div>'+
+      '<button class="btn gold" id="backToSetup">Voltar</button></div>';
+    document.getElementById("backToSetup").addEventListener("click", renderQuizSetup);
+    log("quiz", "Quiz de "+quizState.subject.name+" concluído com "+pct+"% de acerto.");
+  }
+
+  /* ---------------- Gemini AI ---------------- */
+  function geminiEndpoint(){
+    var model = state.settings.geminiModel || "gemini-3.8-flash";
+    return "https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+state.settings.geminiKey;
+  }
+  function geminiServerEndpoint(path){
+    var base=(state.settings.geminiServerEndpoint||"http://localhost:8787").replace(/\/$/,"");
+    return base+path;
+  }
+  function callGemini(promptText){
+    var server=(state.settings.geminiServerEndpoint||"").trim();
+    if(server){
+      return fetch(geminiServerEndpoint("/api/gemini/generate"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:state.settings.geminiModel||"gemini-3.8-flash",prompt:promptText})})
+        .then(function(r){return r.json().then(function(data){return {ok:r.ok,data:data};});})
+        .then(function(result){
+          if(result.ok && result.data.text) return result.data.text;
+          if(!state.settings.geminiKey) throw new Error(result.data.error||"Servidor Gemini sem chave configurada.");
+          return callGeminiDirect(promptText);
+        });
+    }
+    return callGeminiDirect(promptText);
+  }
+  function callGeminiDirect(promptText){
+    if(!state.settings.geminiKey) return Promise.reject(new Error("Configure o Gemini no servidor ou informe uma chave local em Ajustes."));
+    return fetch(geminiEndpoint(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:promptText}]}]})})
+      .then(function(r){return r.json().then(function(data){return {ok:r.ok,data:data};});})
+      .then(function(result){
+        var data=result.data; if(!result.ok||data.error) throw new Error(data.error&&data.error.message||"Erro na API do Gemini");
+        var text=data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0].text;
+        if(!text) throw new Error("Resposta vazia da IA."); return text;
+      });
+  }
+  function refreshGeminiServerStatus(){
+    var dot=document.getElementById("geminiServerDot"), text=document.getElementById("geminiServerText"); if(!dot||!text) return;
+    fetch(geminiServerEndpoint("/api/gemini/health")).then(function(r){return r.json().then(function(d){return {ok:r.ok,data:d};});}).then(function(x){
+      dot.classList.remove("ok","bad"); dot.classList.add(x.ok&&x.data.configured?"ok":"bad");
+      text.textContent=x.ok?(x.data.configured?"Gemini configurado no servidor.":"Servidor ativo, mas GEMINI_API_KEY não está configurada."):"Servidor Gemini indisponível.";
+    }).catch(function(){dot.classList.remove("ok");dot.classList.add("bad");text.textContent="Servidor Gemini indisponível.";});
+  }
+
+  function parseQuestionsJson(text){
+    var cleaned = text.replace(/```json/g,"").replace(/```/g,"").trim();
+    var arr = JSON.parse(cleaned);
+    if(!Array.isArray(arr)) throw new Error("Formato inesperado.");
+    return arr.filter(function(q){
+      return q && q.question && Array.isArray(q.options) && q.options.length===4 && typeof q.correctIndex==="number";
+    });
+  }
+
+  function parseTrailJson(text){
+    var cleaned = text.replace(/```json/g,"").replace(/```/g,"").trim();
+    var start = cleaned.indexOf("{");
+    var end = cleaned.lastIndexOf("}");
+    if(start<0 || end<0) throw new Error("A IA não retornou uma trilha válida.");
+    var trail = JSON.parse(cleaned.slice(start, end+1));
+    if(!trail.name || !Array.isArray(trail.subjects) || trail.subjects.length===0) throw new Error("A trilha veio sem matérias.");
+    return trail;
+  }
+
+  function createFullTrail(name){
+    if(!state.settings.geminiKey && !state.settings.geminiServerEndpoint) return Promise.reject(new Error("Configure o Gemini em Ajustes."));
+    var prompt = "Crie uma trilha completa de estudos em português para o objetivo: '"+name+"'. Organize do básico ao avançado. Inclua entre 5 e 8 matérias, cada uma com 3 a 6 temas em ordem de dificuldade, 2 a 4 videoaulas públicas do YouTube e 4 questões práticas de múltipla escolha. Priorize fontes oficiais e canais educacionais confiáveis. Responda SOMENTE JSON válido neste formato: "+
+      '{"name":"...","description":"...","subjects":[{"name":"...","color":"#C08A28","topics":["..."],"videos":[{"title":"...","ytId":"ID_DE_11_CARACTERES"}],"questions":[{"question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"..."}]}]}. '+
+      "Não invente IDs de vídeo: se não souber um ID real, use videos como lista vazia. As questões devem ser objetivas e contextualizadas para provas.";
+    return callGemini(prompt).then(function(text){
+      var generated = parseTrailJson(text);
+      var trail = {id:uid(), name:generated.name, description:generated.description||"Trilha criada com IA", subjects:[]};
+      generated.subjects.forEach(function(subject, index){
+        var videos = Array.isArray(subject.videos) ? subject.videos.filter(function(video){ return video && /^[\w-]{11}$/.test(video.ytId); }).map(function(video){
+          return {id:uid(), ytId:video.ytId, title:String(video.title||"Aula"), addedBy:"ia"};
+        }) : [];
+        var questions = Array.isArray(subject.questions) ? subject.questions.filter(function(q){ return q && q.question && Array.isArray(q.options) && q.options.length===4 && Number(q.correctIndex)>=0 && Number(q.correctIndex)<=3; }).map(function(q){
+          return {id:uid(), question:String(q.question), options:q.options.map(String), correctIndex:Number(q.correctIndex), explanation:String(q.explanation||""), addedBy:"ia"};
+        }) : [];
+        trail.subjects.push({id:uid(), name:String(subject.name||"Matéria "+(index+1)), color:subject.color||SWATCHES[index%SWATCHES.length], topics:Array.isArray(subject.topics)?subject.topics.map(String):[], videos:videos, questions:questions});
+      });
+      if(trail.subjects.length===0) throw new Error("A IA não gerou matérias utilizáveis.");
+      state.trails.push(trail);
+      state.activeTrailId = trail.id;
+      state.subjects = trail.subjects;
+      save();
+      log("ia", "Trilha completa criada para "+trail.name+" com "+trail.subjects.length+" matérias.");
+      return trail;
+    });
+  }
+
+  function generateQuestionsForSubject(subjectId, qty, difficulty){
+    var s = subjectById(subjectId);
+    if(!s) return Promise.reject(new Error("Matéria não encontrada."));
+    if(!state.settings.geminiKey && !state.settings.geminiServerEndpoint) return Promise.reject(new Error("Configure o Gemini em Ajustes."));
+    var prompt = "Gere exatamente "+qty+" questões de múltipla escolha em português sobre o tema '"+s.name+"', nível de dificuldade "+difficulty+". "+
+      "Responda SOMENTE com um array JSON válido, sem texto antes ou depois, no formato: "+
+      '[{"question":"...","options":["...","...","...","..."],"correctIndex":0,"explanation":"..."}]. '+
+      "correctIndex é o índice (0 a 3) da alternativa correta dentro de options.";
+    return callGemini(prompt).then(function(text){
+      var parsed = parseQuestionsJson(text);
+      if(parsed.length===0) throw new Error("A IA não retornou questões em formato válido.");
+      parsed.forEach(function(q){
+        s.questions.push({ id: uid(), question:q.question, options:q.options, correctIndex:q.correctIndex, explanation:q.explanation||"", addedBy:"ia" });
+      });
+      save();
+      log("ia", parsed.length+" questões novas geradas para "+s.name+" pela IA.");
+      return parsed.length;
+    });
+  }
+
+  function renderAI(){
+    populateSelect(document.getElementById("aiSubjectSelect"));
+    var hasKey = !!state.settings.geminiKey;
+    var dot = document.getElementById("geminiStatusDot");
+    dot.className = "status-dot " + (hasKey ? "on" : "off");
+    document.getElementById("geminiStatusText").textContent = hasKey ? "chave do Gemini configurada" : "nenhuma chave do Gemini configurada — vá em Ajustes";
+
+    var last = state.settings.lastBotRun;
+    var bdot = document.getElementById("botStatusDot");
+    var willRunToday = hasKey && (Date.now()-last > DAY_MS);
+    bdot.className = "status-dot " + (hasKey ? (willRunToday ? "off" : "on") : "off");
+    document.getElementById("botStatusText").textContent = !hasKey
+      ? "aguardando chave do Gemini"
+      : (last ? "última execução: "+timeAgo(last) : "ainda não executado");
+
+    renderAILog();
+  }
+
+  function renderAILog(){
+    var box = document.getElementById("aiLog");
+    var entries = state.activityLog.filter(function(a){ return a.type==="ia" || a.type==="bot"; });
+    if(entries.length===0){ box.innerHTML = '<div class="empty-note">Nenhuma atividade de IA ainda.</div>'; return; }
+    box.innerHTML = entries.map(function(item){
+      return '<div class="feed-item"><span class="feed-dot"></span><div><div>'+escapeHtml(item.message)+'</div><div class="feed-time">'+timeAgo(item.date)+'</div></div></div>';
+    }).join("");
+  }
+
+  document.getElementById("genQuestionsBtn").addEventListener("click", function(){
+    var subjectId = document.getElementById("aiSubjectSelect").value;
+    var qty = parseInt(document.getElementById("aiQtyInput").value,10) || 5;
+    var difficulty = document.getElementById("aiDifficulty").value;
+    var btn = document.getElementById("genQuestionsBtn");
+    btn.disabled = true; btn.textContent = "Gerando…";
+    generateQuestionsForSubject(subjectId, qty, difficulty).then(function(n){
+      toast(n+" questões geradas com sucesso.");
+      renderAI();
+    }).catch(function(err){
+      toast("Erro: "+err.message);
+    }).finally(function(){
+      btn.disabled = false; btn.textContent = "Gerar agora";
+    });
+  });
+
+  document.getElementById("createTrailBtn").addEventListener("click", function(){
+    var name = document.getElementById("aiTrailName").value.trim();
+    if(!name){ toast("Informe o concurso ou tema da trilha."); return; }
+    var btn = document.getElementById("createTrailBtn");
+    var progress = document.getElementById("generationProgress");
+    btn.disabled = true; btn.textContent = "Criando…"; progress.classList.add("show");
+    createFullTrail(name).then(function(trail){
+      renderTrailSelect();
+      toast("Trilha criada com "+trail.subjects.length+" matérias.");
+      goTo("dashboard");
+    }).catch(function(err){ toast("Erro: "+err.message); }).finally(function(){
+      btn.disabled = false; btn.textContent = "Criar trilha completa"; progress.classList.remove("show");
+    });
+  });
+
+  document.getElementById("runBotNowBtn").addEventListener("click", function(){ runDailyBot(true); });
+
+  function runDailyBot(forced){
+    if(!state.settings.geminiKey && !state.settings.geminiServerEndpoint){ if(forced) toast("Configure o Gemini primeiro."); return; }
+    if(!forced && (Date.now()-state.settings.lastBotRun < DAY_MS)) return;
+    if(state.subjects.length===0) return;
+    var weakest = state.subjects.slice().sort(function(a,b){return a.questions.length-b.questions.length;})[0];
+    generateQuestionsForSubject(weakest.id, 3, "médio").then(function(n){
+      state.settings.lastBotRun = Date.now();
+      save();
+      log("bot", "Bot diário gerou "+n+" questões novas para "+weakest.name+".");
+      if(forced) toast("Bot executado: "+n+" questões novas.");
+      renderAI();
+    }).catch(function(err){
+      if(forced) toast("Bot falhou: "+err.message);
+    });
+  }
+
+  function openVideoModal(videoId){
+    var s=subjectById(activeVideoSubject);
+    if(!s) return;
+    var v=(s.videos||[]).filter(function(x){return x.id===videoId;})[0];
+    if(!v) return;
+    var modal=document.getElementById("videoModal");
+    document.getElementById("videoModalTitle").textContent=v.title||"Aula";
+    document.getElementById("videoModalFrame").innerHTML='<iframe src="https://www.youtube.com/embed/'+encodeURIComponent(v.ytId)+'?autoplay=0&rel=0&modestbranding=1&playsinline=1" title="'+escapeHtml(v.title)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>';
+    modal.classList.add("show"); modal.setAttribute("aria-hidden","false"); document.body.style.overflow="hidden";
+  }
+  function closeVideoModal(){
+    var modal=document.getElementById("videoModal");
+    modal.classList.remove("show"); modal.setAttribute("aria-hidden","true");
+    document.getElementById("videoModalFrame").innerHTML=""; document.body.style.overflow="";
+  }
+  document.addEventListener("DOMContentLoaded", function(){
+    document.getElementById("videoModalClose").addEventListener("click",closeVideoModal);
+    document.getElementById("videoModal").addEventListener("click",function(e){if(e.target===this) closeVideoModal();});
+    document.getElementById("videoModalFullscreen").addEventListener("click",function(){
+      var panel=document.getElementById("videoModalPanel");
+      if(document.fullscreenElement) document.exitFullscreen(); else if(panel.requestFullscreen) panel.requestFullscreen();
+    });
+    document.addEventListener("keydown",function(e){if(e.key==="Escape" && document.getElementById("videoModal").classList.contains("show")) closeVideoModal();});
+  });
+
+  /* ---------------- Settings ---------------- */
+  function renderSettings(){
+    document.getElementById("geminiKeyInput").value = state.settings.geminiKey || "";
+    document.getElementById("geminiModelInput").value = state.settings.geminiModel || "gemini-3.8-flash";
+    document.getElementById("geminiServerInput").value = state.settings.geminiServerEndpoint || "http://localhost:8787";
+    refreshGeminiServerStatus();
+    document.getElementById("ytKeyInput").value = state.settings.youtubeKey || "";
+    document.getElementById("innerTubeEndpointInput").value = state.settings.innerTubeEndpoint || "http://localhost:8787";
+
+    var list = document.getElementById("subjManageList");
+    list.innerHTML = state.subjects.map(function(s){
+      return '<div class="subj-manage-row"><span class="trail-swatch" style="background:'+s.color+'"></span>'+
+        '<span>'+escapeHtml(s.name)+'</span><span class="hint">'+s.videos.length+' aulas · '+s.questions.length+' questões</span>'+
+        '<button class="btn small ghost danger" data-del="'+s.id+'">Excluir</button></div>';
+    }).join("") || '<div class="empty-note">Nenhuma matéria criada.</div>';
+    list.querySelectorAll("button[data-del]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        if(!confirm("Excluir esta matéria e todo o conteúdo dela?")) return;
+        state.subjects = state.subjects.filter(function(s){ return s.id !== btn.getAttribute("data-del"); });
+        save();
+        renderSettings();
+      });
+    });
+  }
+
+  document.getElementById("saveGeminiBtn").addEventListener("click", function(){
+    state.settings.geminiKey = document.getElementById("geminiKeyInput").value.trim();
+    state.settings.geminiModel = document.getElementById("geminiModelInput").value.trim() || "gemini-3.8-flash";
+    save();
+    toast("Configuração local do Gemini salva.");
+    renderAI(); refreshGeminiServerStatus();
+  });
+  document.getElementById("saveGeminiServerBtn").addEventListener("click", function(){
+    state.settings.geminiServerEndpoint = document.getElementById("geminiServerInput").value.trim().replace(/\/$/,"") || "http://localhost:8787";
+    save(); refreshGeminiServerStatus(); toast("Servidor Gemini salvo.");
+  });
+  document.getElementById("saveYtBtn").addEventListener("click", function(){
+    state.settings.youtubeKey = document.getElementById("ytKeyInput").value.trim();
+    save();
+    toast("Chave do YouTube salva.");
+  });
+  document.getElementById("saveInnerTubeBtn").addEventListener("click", function(){
+    state.settings.innerTubeEndpoint = document.getElementById("innerTubeEndpointInput").value.trim().replace(/\/+$/,"") || "http://localhost:8787";
+    save();
+    toast("Servidor InnerTube salvo.");
+  });
+  document.getElementById("addSubjectBtn").addEventListener("click", function(){
+    var name = document.getElementById("newSubjectName").value.trim();
+    if(!name){ return; }
+    var color = SWATCHES[state.subjects.length % SWATCHES.length];
+    state.subjects.push({ id: uid(), name:name, color:color, videos:[], questions:[] });
+    save();
+    document.getElementById("newSubjectName").value = "";
+    renderSettings();
+    toast("Matéria adicionada.");
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function(){
+    if(!confirm("Isso vai apagar todos os perfis, matérias e progresso salvos neste navegador. Continuar?")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    state = seedState();
+    save();
+    init();
+    toast("Dados apagados.");
+  });
+
+  function doExport(){
+    var blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "trilha-backup.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  document.getElementById("exportBtn").addEventListener("click", doExport);
+  document.getElementById("exportBtn2").addEventListener("click", doExport);
+
+  document.getElementById("importFile").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var parsed = JSON.parse(reader.result);
+        if(!parsed.subjects || !parsed.profiles) throw new Error("Arquivo inválido.");
+        state = parsed;
+        save();
+        init();
+        toast("Backup importado.");
+      }catch(err){
+        toast("Não foi possível importar: "+err.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  /* ---------------- Init ---------------- */
+  function init(){
+    renderProfileSelect();
+    renderTrailSelect();
+    goTo("dashboard");
+    setTimeout(function(){ runDailyBot(false); }, 1200);
+  }
+  init();
+
+})();
+</script>
+  <div class="video-modal" id="videoModal" aria-hidden="true">
+    <div class="video-modal-panel" id="videoModalPanel">
+      <div class="video-modal-head">
+        <div class="video-modal-title" id="videoModalTitle">Aula</div>
+        <div class="video-modal-actions">
+          <button id="videoModalFullscreen" title="Tela cheia">⛶ Tela cheia</button>
+          <button id="videoModalClose" title="Fechar">✕ Fechar</button>
+        </div>
+      </div>
+      <div class="video-modal-frame" id="videoModalFrame"></div>
+    </div>
+  </div>
+
+</body>
+</html>
