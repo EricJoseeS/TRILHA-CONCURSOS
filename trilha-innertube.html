@@ -234,7 +234,7 @@
   .player-tool{border:1px solid rgba(255,255,255,.18);background:rgba(15,18,24,.82);color:#fff;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:12px;}
   .player-tool:hover{background:rgba(45,51,62,.92);}
   .custom-player-overlay{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;background:linear-gradient(rgba(7,10,15,.72),transparent 25%,transparent 64%,rgba(7,10,15,.88));transition:opacity .2s;}
-  .custom-player-overlay.idle{opacity:.18;}
+  .custom-player-overlay.idle{opacity:0;}
   .custom-player-head,.custom-player-foot{display:flex;align-items:center;gap:10px;padding:14px 16px;color:#fff;pointer-events:auto;}
   .custom-player-head{justify-content:space-between;}
   .custom-player-user{font-size:12px;font-weight:800;letter-spacing:.02em;}
@@ -1081,6 +1081,22 @@
   var activeVideoSubject = null;
   var customPlayer = null;
   var customProgressTimer = null;
+  var customOverlayTimer = null;
+
+  function showCustomPlayerOverlay(){
+    var overlay = document.getElementById("customPlayerOverlay");
+    if(!overlay) return;
+    overlay.classList.remove("idle");
+    clearTimeout(customOverlayTimer);
+  }
+
+  function hideCustomPlayerOverlaySoon(){
+    clearTimeout(customOverlayTimer);
+    customOverlayTimer = setTimeout(function(){
+      var overlay = document.getElementById("customPlayerOverlay");
+      if(overlay) overlay.classList.add("idle");
+    }, 3500);
+  }
 
   function formatPlayerTime(seconds){
     seconds = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -1114,6 +1130,8 @@
           onStateChange:function(event){
             var button=document.getElementById("customPlayBtn");
             if(button) button.textContent = event.data === window.YT.PlayerState.PLAYING ? "❚❚" : "▶";
+            if(event.data === window.YT.PlayerState.PLAYING) hideCustomPlayerOverlaySoon();
+            else showCustomPlayerOverlay();
           }
         }
       });
@@ -1126,6 +1144,8 @@
       var state = customPlayer.getPlayerState();
       if(state === window.YT.PlayerState.PLAYING) customPlayer.pauseVideo();
       else customPlayer.playVideo();
+      showCustomPlayerOverlay();
+      hideCustomPlayerOverlaySoon();
     });
     document.getElementById("customMuteBtn").addEventListener("click",function(){
       if(!customPlayer) return;
@@ -1135,7 +1155,17 @@
     });
     document.getElementById("customProgress").addEventListener("input",function(){
       if(customPlayer && customPlayer.getDuration()) customPlayer.seekTo(customPlayer.getDuration() * (Number(this.value) / 100), true);
+      showCustomPlayerOverlay();
+      hideCustomPlayerOverlaySoon();
     });
+    document.getElementById("customPlayerOverlay").addEventListener("mousemove",function(){
+      showCustomPlayerOverlay();
+      hideCustomPlayerOverlaySoon();
+    });
+    document.getElementById("customPlayerOverlay").addEventListener("touchstart",function(){
+      showCustomPlayerOverlay();
+      hideCustomPlayerOverlaySoon();
+    },{passive:true});
   }
 
   function renderVideoSubjectTabs(){
