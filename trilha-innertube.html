@@ -172,13 +172,17 @@
   .card h3{font-size:14px; text-transform:none; color:var(--slate); font-weight:700; margin-bottom:14px;}
 
   /* trail visual for subject progress */
-  .trail-row{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .trail-row{display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line);}
   .trail-row:last-child{border-bottom:none;}
   .trail-swatch{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
   .trail-name{font-weight:700; font-size:14px; flex:1;}
   .trail-track{flex:1.4; height:6px; border-radius:4px; background:var(--line); overflow:hidden; max-width:180px;}
   .trail-fill{height:100%; border-radius:4px;}
   .trail-pct{font-size:12.5px; color:var(--slate); width:34px; text-align:right;}
+  .trail-detail{display:flex;justify-content:space-between;gap:12px;margin:-5px 0 0 22px;width:calc(100% - 22px);font-size:11.5px;color:var(--slate);}
+  .trail-progress-wrap{display:flex;align-items:center;gap:10px;flex:1.4;max-width:250px;}
+  .trail-progress-wrap .trail-track{flex:1;max-width:none;}
+  .time-stat{min-width:110px;}
 
   .feed-item{display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13.5px;}
   .feed-item:last-child{border-bottom:none;}
@@ -466,6 +470,7 @@
               <div class="stat"><b id="statVideos">0</b><span>aulas assistidas</span></div>
               <div class="stat"><b id="statQuestions">0</b><span>questões respondidas</span></div>
               <div class="stat"><b id="statAccuracy">0%</b><span>taxa de acerto</span></div>
+              <div class="stat time-stat"><b id="statStudyTime">0 min</b><span>tempo estudado</span></div>
             </div>
           </div>
           <div class="card">
@@ -476,6 +481,7 @@
 
         <div class="card">
           <h3>Sua trilha por matéria</h3>
+          <div class="hint" style="margin:-7px 0 10px;">Progresso calculado pelo tempo das aulas concluídas.</div>
           <div id="subjectTrail"></div>
         </div>
       </section>
@@ -770,6 +776,29 @@
     ];
   }
 
+  function lessonNumberFromTitle(title){
+    var value = String(title || "");
+    var match = value.match(/(?:aula|lesson|class|epis[oó]dio|ep)\s*[-#.:]?\s*0*(\d+)/i) || value.match(/^\s*0*(\d+)\b/);
+    return match ? Number(match[1]) : null;
+  }
+
+  function sortVideosByLessonNumber(videos){
+    if(!Array.isArray(videos) || videos.length < 2) return videos || [];
+    var numbered = videos.some(function(video){ return lessonNumberFromTitle(video.title) !== null; });
+    if(!numbered) return videos;
+    videos.forEach(function(video, index){
+      video._lessonNumber = lessonNumberFromTitle(video.title);
+      video._originalIndex = index;
+    });
+    videos.sort(function(a,b){
+      var aNumber = a._lessonNumber === null ? Number.MAX_SAFE_INTEGER : a._lessonNumber;
+      var bNumber = b._lessonNumber === null ? Number.MAX_SAFE_INTEGER : b._lessonNumber;
+      return aNumber - bNumber || a._originalIndex - b._originalIndex;
+    });
+    videos.forEach(function(video){ delete video._lessonNumber; delete video._originalIndex; });
+    return videos;
+  }
+
   function normalizeState(data){
     data.profiles = data.profiles || {};
     if(!data.profiles.Admin){
@@ -786,6 +815,9 @@
       data.trails[0].name = "INSS · Técnico do Seguro Social";
       data.trails[0].description = "Do básico ao avançado para o concurso do INSS";
     }
+    data.trails.forEach(function(trail){
+      (trail.subjects || []).forEach(function(subject){ sortVideosByLessonNumber(subject.videos); });
+    });
     data.activeTrailId = data.activeTrailId || data.trails[0].id;
     var active = data.trails.filter(function(t){ return t.id===data.activeTrailId; })[0] || data.trails[0];
     data.activeTrailId = active.id;
@@ -1010,15 +1042,44 @@
   document.getElementById("trailSelect").addEventListener("change", function(e){ switchTrail(e.target.value); });
 
   /* ---------------- Dashboard ---------------- */
+  function durationSeconds(value){
+    if(typeof value === "number" && isFinite(value)) return value;
+    var text = String(value || "").trim();
+    if(!text) return 0;
+    var parts = text.split(":").map(Number);
+    if(parts.some(function(part){ return !isFinite(part); })) return 0;
+    if(parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+    if(parts.length === 2) return parts[0]*60 + parts[1];
+    var hours = text.match(/(\d+(?:[.,]\d+)?)\s*h/i);
+    var minutes = text.match(/(\d+(?:[.,]\d+)?)\s*m/i);
+    var seconds = text.match(/(\d+(?:[.,]\d+)?)\s*s/i);
+    return (hours ? Number(hours[1].replace(",","."))*3600 : 0) +
+      (minutes ? Number(minutes[1].replace(",","."))*60 : 0) +
+      (seconds ? Number(seconds[1].replace(",",".")) : 0);
+  }
+
+  function formatStudyTime(seconds){
+    seconds = Math.max(0, Math.round(seconds || 0));
+    var hours = Math.floor(seconds / 3600);
+    var minutes = Math.floor((seconds % 3600) / 60);
+    if(hours) return hours+"h "+String(minutes).padStart(2,"0")+"min";
+    return minutes+" min";
+  }
+
   function renderDashboard(){
     var p = currentProfile();
     document.getElementById("dashName").textContent = ", " + state.currentProfile;
     document.getElementById("streakNum").textContent = p.streak;
 
     var totalVideos = 0, watchedVideos = 0, totalQ = 0, answered = 0, correct = 0;
+    var totalStudySeconds = 0, completedStudySeconds = 0;
     state.subjects.forEach(function(s){
       totalVideos += s.videos.length;
-      s.videos.forEach(function(v){ if(p.watched[v.id]) watchedVideos++; });
+      s.videos.forEach(function(v){
+        var seconds = durationSeconds(v.duration);
+        totalStudySeconds += seconds;
+        if(p.watched[v.id]){ watchedVideos++; completedStudySeconds += seconds; }
+      });
       totalQ += s.questions.length;
     });
     Object.keys(p.answers).forEach(function(qid){
@@ -1031,6 +1092,7 @@
     document.getElementById("statVideos").textContent = watchedVideos;
     document.getElementById("statQuestions").textContent = answered;
     document.getElementById("statAccuracy").textContent = answered>0 ? Math.round((correct/answered)*100)+"%" : "—";
+    document.getElementById("statStudyTime").textContent = formatStudyTime(completedStudySeconds);
 
     var feed = document.getElementById("activityFeed");
     if(state.activityLog.length===0){
@@ -1044,14 +1106,16 @@
     var trail = document.getElementById("subjectTrail");
     trail.innerHTML = state.subjects.map(function(s){
       var vTotal = s.videos.length, vDone = s.videos.filter(function(v){return p.watched[v.id];}).length;
+      var subjectTotalSeconds = s.videos.reduce(function(total, video){ return total + durationSeconds(video.duration); }, 0);
+      var subjectDoneSeconds = s.videos.reduce(function(total, video){ return total + (p.watched[video.id] ? durationSeconds(video.duration) : 0); }, 0);
       var qTotal = s.questions.length, qDone = s.questions.filter(function(q){return p.answers[q.id];}).length;
       var tot = vTotal+qTotal, done = vDone+qDone;
-      var pct = tot>0 ? Math.round((done/tot)*100) : 0;
+      var pct = subjectTotalSeconds>0 ? Math.round((subjectDoneSeconds/subjectTotalSeconds)*100) : (vTotal>0 ? Math.round((vDone/vTotal)*100) : 0);
       return '<div class="trail-row">'+
         '<span class="trail-swatch" style="background:'+s.color+'"></span>'+
         '<span class="trail-name">'+escapeHtml(s.name)+'</span>'+
-        '<div class="trail-track"><div class="trail-fill" style="width:'+pct+'%; background:'+s.color+'"></div></div>'+
-        '<span class="trail-pct">'+pct+'%</span></div>';
+        '<div class="trail-progress-wrap"><div class="trail-track"><div class="trail-fill" style="width:'+pct+'%; background:'+s.color+'"></div></div><span class="trail-pct">'+pct+'%</span></div>'+ 
+        '<div class="trail-detail"><span>'+vDone+'/'+vTotal+' aulas concluídas · '+qDone+'/'+qTotal+' questões</span><span>'+formatStudyTime(subjectDoneSeconds)+' de '+formatStudyTime(subjectTotalSeconds)+'</span></div></div>';
     }).join("") || '<div class="empty-note">Adicione uma matéria em Ajustes.</div>';
   }
 
@@ -1101,6 +1165,7 @@
       grid.innerHTML = '<div class="classroom-empty">Crie ou selecione uma matéria para começar.</div>';
       return;
     }
+    sortVideosByLessonNumber(s.videos);
 
     topics.innerHTML = (s.topics||[]).map(function(topic,index){
       return '<span class="topic-chip">'+(index+1)+". "+escapeHtml(topic)+'</span>';
@@ -1265,6 +1330,7 @@
     var subject = subjectById(activeVideoSubject);
     var list = document.getElementById("adminLessonList");
     if(!subject){ list.innerHTML = '<div class="empty-note">Crie ou selecione uma matéria.</div>'; return; }
+    sortVideosByLessonNumber(subject.videos);
     list.innerHTML = subject.videos.length ? subject.videos.map(function(video, index){
       return '<div class="trail-row">'+
         '<span class="trail-swatch" style="background:'+subject.color+'"></span>'+ 
@@ -1337,14 +1403,19 @@
     if(!subject || !item || !item.id) return false;
     var existing = subject.videos.filter(function(v){ return v.ytId === item.id; })[0];
     if(existing){
+      var changed = false;
       if(item.title && existing.title !== item.title){
         existing.title = String(item.title);
-        return true;
+        changed = true;
       }
-      return false;
+      if(item.duration && existing.duration !== item.duration){
+        existing.duration = String(item.duration);
+        changed = true;
+      }
+      return changed;
     }
     subject.videos.push({
-      id:uid(), ytId:item.id, title:String(item.title||"Aula"), addedBy:"innertube",
+      id:uid(), ytId:item.id, title:String(item.title||"Aula"), duration:String(item.duration||""), addedBy:"innertube",
       playlistTitle: playlistMeta ? String(playlistMeta.title || "") : "",
       playlistIndex: typeof playlistIndex === "number" ? playlistIndex : null
     });

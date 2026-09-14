@@ -110,6 +110,27 @@ async function translateVideoTitles(videos) {
   return translated;
 }
 
+async function enrichVideoDurations(videos) {
+  const yt = await getYouTube();
+  const enriched = [];
+  for (let index = 0; index < videos.length; index += 6) {
+    const batch = videos.slice(index, index + 6);
+    enriched.push(...await Promise.all(batch.map(async video => {
+      if (video.duration) return video;
+      try {
+        const info = await Promise.race([
+          yt.getInfo(video.id),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("duration timeout")), 6000))
+        ]);
+        return { ...video, duration: Number(info.basic_info?.duration || 0) };
+      } catch {
+        return video;
+      }
+    })));
+  }
+  return enriched;
+}
+
 function extractPlaylistId(input) {
   const value = String(input || "").trim();
   if (/^[\w-]+$/.test(value)) return value;
@@ -152,7 +173,8 @@ app.get("/api/youtube/playlist", async (req, res) => {
     const yt = await getYouTube();
     const playlist = await yt.getPlaylist(playlistId);
 
-    const items = await translateVideoTitles((playlist.videos || []).map(normalizeVideo).filter(v => v.id));
+    const normalizedItems = (playlist.videos || []).map(normalizeVideo).filter(v => v.id);
+    const items = await translateVideoTitles(await enrichVideoDurations(normalizedItems));
     res.json({
       playlist: {
         id: playlistId,
