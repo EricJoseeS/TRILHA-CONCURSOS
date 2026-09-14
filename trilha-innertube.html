@@ -1260,7 +1260,14 @@
   function addInnerTubeVideo(item, subject, playlistMeta, playlistIndex){
     if(!isAdmin()) return false;
     if(!subject || !item || !item.id) return false;
-    if(subject.videos.some(function(v){ return v.ytId === item.id; })) return false;
+    var existing = subject.videos.filter(function(v){ return v.ytId === item.id; })[0];
+    if(existing){
+      if(item.title && existing.title !== item.title){
+        existing.title = String(item.title);
+        return true;
+      }
+      return false;
+    }
     subject.videos.push({
       id:uid(), ytId:item.id, title:String(item.title||"Aula"), addedBy:"innertube",
       playlistTitle: playlistMeta ? String(playlistMeta.title || "") : "",
@@ -1289,7 +1296,7 @@
       btn.addEventListener("click", function(){
         var item = innerTubeLastItems.filter(function(x){ return x.id === btn.getAttribute("data-inner-vid"); })[0];
         var s = subjectById(activeVideoSubject);
-        if(addInnerTubeVideo(item,s,playlistMeta,null)){ save(); renderAdmin(); renderVideos(); toast("Aula adicionada à trilha."); }
+        if(addInnerTubeVideo(item,s,playlistMeta,null)){ save(); renderAdmin(); renderVideos(); toast("Aula adicionada ou atualizada."); }
         else toast("Essa aula já está na matéria.");
       });
     });
@@ -1352,7 +1359,7 @@
       if(a.playlistIndex === null || b.playlistIndex === null) return 0;
       return a.playlistIndex - b.playlistIndex;
     });
-    save(); renderAdmin(); renderVideos(); toast(added+" aula(s) adicionada(s).");
+    save(); renderAdmin(); renderVideos(); toast(added+" aula(s) adicionada(s) ou atualizada(s).");
   });
 
   /* Official YouTube Data API fallback. */
