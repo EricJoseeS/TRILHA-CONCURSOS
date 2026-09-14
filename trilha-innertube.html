@@ -778,7 +778,7 @@
 
   function lessonNumberFromTitle(title){
     var value = String(title || "");
-    var match = value.match(/(?:aula|lesson|class|epis[oó]dio|ep)\s*[-#.:]?\s*0*(\d+)/i) || value.match(/^\s*0*(\d+)\b/);
+    var match = value.match(/(?:aula|li[cç][aã]o|lesson|class|epis[oó]dio|ep)\s*[-#.:]?\s*0*(\d+)/i) || value.match(/^\s*0*(\d+)\b/);
     return match ? Number(match[1]) : null;
   }
 
