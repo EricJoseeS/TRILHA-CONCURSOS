@@ -1130,8 +1130,7 @@
           onStateChange:function(event){
             var button=document.getElementById("customPlayBtn");
             if(button) button.textContent = event.data === window.YT.PlayerState.PLAYING ? "❚❚" : "▶";
-            if(event.data === window.YT.PlayerState.PLAYING) hideCustomPlayerOverlaySoon();
-            else showCustomPlayerOverlay();
+            hideCustomPlayerOverlaySoon();
           }
         }
       });
@@ -1166,6 +1165,7 @@
       showCustomPlayerOverlay();
       hideCustomPlayerOverlaySoon();
     },{passive:true});
+    hideCustomPlayerOverlaySoon();
   }
 
   function renderVideoSubjectTabs(){
