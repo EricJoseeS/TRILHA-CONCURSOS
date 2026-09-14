@@ -744,76 +744,6 @@
     ];
   }
 
-  function translateLessonTitle(title){
-    var value = String(title || "Aula").trim();
-    var exact = {
-      "Social Security Law - Lesson 1 - Introduction to Social Security - INSS - Prof. Eduardo Tanaka": "Direito Previdenciário - Aula 1 - Introdução à Seguridade Social - INSS - Prof. Eduardo Tanaka",
-      "Social Security Law - Lesson 2 - Origin and Legislative Evolution of Social Security in Brazil Part 1": "Direito Previdenciário - Aula 2 - Origem e evolução legislativa da Seguridade Social no Brasil - Parte 1",
-      "Social Security Law - Lesson 3 - Social Security Origin and Legislative Evolution in Brazil Part 1": "Direito Previdenciário - Aula 3 - Origem e evolução da Seguridade Social no Brasil - Parte 1",
-      "Social Security Law - Lesson 4 - Social Security: Concept - Prof. Eduardo Tanaka": "Direito Previdenciário - Aula 4 - Conceito de Seguridade Social - Prof. Eduardo Tanaka",
-      "Social Security Law - Lesson 5 - Social Security Organization - Prof. Eduardo Tanaka": "Direito Previdenciário - Aula 5 - Organização da Seguridade Social - Prof. Eduardo Tanaka",
-      "Social Security Law - Lesson 6 - Social Security Constitutional Principles - Prof. Eduardo Tanaka": "Direito Previdenciário - Aula 6 - Princípios constitucionais da Seguridade Social - Prof. Eduardo Tanaka",
-      "Social Security Law - Lesson 7 - Social Security Specific Principles - CF Art. 194, I to IV": "Direito Previdenciário - Aula 7 - Princípios específicos da Seguridade Social - CF, art. 194, I a IV",
-      "Social Security Law - Class 8 - Social Security Specific Principles - CF art. 194, items V to VII": "Direito Previdenciário - Aula 8 - Princípios específicos da Seguridade Social - CF, art. 194, incisos V a VII",
-      "Direito Previdenciário - Aula 9 - Seguridade Social Princípios Constitucionais - CF art. 195, caput": "Direito Previdenciário - Aula 9 - Princípios constitucionais da Seguridade Social - CF, art. 195, caput"
-    };
-    if(exact[value]) return exact[value];
-    return value
-      .replace(/\bLesson\b/gi, "Aula")
-      .replace(/\bClass\b/gi, "Aula")
-      .replace(/\bIntroduction\b/gi, "Introdução")
-      .replace(/\bSocial Security Law\b/gi, "Direito Previdenciário")
-      .replace(/\bSocial Security\b/gi, "Seguridade Social")
-      .replace(/\bFederal Constitution\b/gi, "Constituição Federal")
-      .replace(/\bConstitution\b/gi, "Constituição")
-      .replace(/\bConstitutional Principles\b/gi, "Princípios constitucionais")
-      .replace(/\bSpecific Principles\b/gi, "Princípios específicos")
-      .replace(/\bPrinciples\b/gi, "Princípios")
-      .replace(/\bLegislation\b/gi, "Legislação")
-      .replace(/\bInterpretation\b/gi, "Interpretação")
-      .replace(/\bIntegration\b/gi, "Integração")
-      .replace(/\bApplication\b/gi, "Aplicação")
-      .replace(/\bSources\b/gi, "Fontes")
-      .replace(/\bAutonomy\b/gi, "Autonomia")
-      .replace(/\bMandatory Insured\b/gi, "Segurados obrigatórios")
-      .replace(/\bDomestic Worker\b/gi, "Trabalhador doméstico")
-      .replace(/\bEmployees\b/gi, "Empregados")
-      .replace(/\bGeneral Scheme\b/gi, "Regime geral")
-      .replace(/\bGeneral\b/gi, "Geral")
-      .replace(/\bSchemes\b/gi, "Regimes")
-      .replace(/\bScheme\b/gi, "Regime")
-      .replace(/\bTypes\b/gi, "Tipos")
-      .replace(/\bHealth\b/gi, "Saúde")
-      .replace(/\bContent\b/gi, "Conteúdo")
-      .replace(/\bCourse\b/gi, "Curso")
-      .replace(/\bFree\b/gi, "Gratuito")
-      .replace(/\bComplete\b/gi, "Completo")
-      .replace(/\bPublic Contest\b/gi, "Concurso Público")
-      .replace(/\bitems\b/gi, "incisos")
-      .replace(/\bin\b/gi, "em")
-      .replace(/\bthe\b/gi, "a")
-      .replace(/\bOrganization\b/gi, "Organização")
-      .replace(/\bConcept\b/gi, "Conceito")
-      .replace(/\bOrigin and Legislative Evolution\b/gi, "Origem e evolução legislativa")
-      .replace(/\bPart\b/gi, "Parte")
-      .replace(/\bBrazil\b/gi, "Brasil")
-      .replace(/\bto\b/gi, "a")
-      .replace(/\bof\b/gi, "da")
-      .replace(/\band\b/gi, "e");
-  }
-
-  function translateSavedLessons(data){
-    (data.trails || []).forEach(function(trail){
-      (trail.subjects || []).forEach(function(subject){
-        (subject.videos || []).forEach(function(video){ video.title = translateLessonTitle(video.title); });
-      });
-    });
-    (data.subjects || []).forEach(function(subject){
-      (subject.videos || []).forEach(function(video){ video.title = translateLessonTitle(video.title); });
-    });
-    return data;
-  }
-
   function normalizeState(data){
     data.profiles = data.profiles || {};
     if(!data.profiles.Admin){
@@ -834,7 +764,7 @@
     var active = data.trails.filter(function(t){ return t.id===data.activeTrailId; })[0] || data.trails[0];
     data.activeTrailId = active.id;
     data.subjects = active.subjects || [];
-    return translateSavedLessons(data);
+    return data;
   }
 
   var state = load();
@@ -1261,8 +1191,27 @@
     var list = document.getElementById("adminLessonList");
     if(!subject){ list.innerHTML = '<div class="empty-note">Crie ou selecione uma matéria.</div>'; return; }
     list.innerHTML = subject.videos.length ? subject.videos.map(function(video, index){
-      return '<div class="trail-row"><span class="trail-swatch" style="background:'+subject.color+'"></span><span class="trail-name">'+escapeHtml((index+1)+". "+video.title)+'</span><button class="btn ghost small" data-admin-delete="'+video.id+'">Apagar</button></div>';
+      return '<div class="trail-row">'+
+        '<span class="trail-swatch" style="background:'+subject.color+'"></span>'+ 
+        '<input type="text" value="'+escapeHtml(video.title)+'" data-admin-title="'+video.id+'" aria-label="Título da aula '+(index+1)+'">'+
+        '<button class="btn ghost small" data-admin-save="'+video.id+'">Salvar</button>'+ 
+        '<button class="btn ghost small danger" data-admin-delete="'+video.id+'">Apagar</button>'+ 
+      '</div>';
     }).join("") : '<div class="empty-note">Nenhuma aula cadastrada nesta matéria.</div>';
+    list.querySelectorAll("[data-admin-save]").forEach(function(button){
+      button.addEventListener("click", function(){
+        var id = button.getAttribute("data-admin-save");
+        var video = subject.videos.filter(function(item){ return item.id === id; })[0];
+        var input = list.querySelector('[data-admin-title="'+id+'"]');
+        var title = input ? input.value.trim() : "";
+        if(!video || !title){ toast("Informe um título para a aula."); return; }
+        video.title = title;
+        save();
+        renderAdmin();
+        renderVideos();
+        toast("Título da aula atualizado.");
+      });
+    });
     list.querySelectorAll("[data-admin-delete]").forEach(function(button){
       button.addEventListener("click", function(){
         var id = button.getAttribute("data-admin-delete");
@@ -1313,7 +1262,7 @@
     if(!subject || !item || !item.id) return false;
     if(subject.videos.some(function(v){ return v.ytId === item.id; })) return false;
     subject.videos.push({
-      id:uid(), ytId:item.id, title:translateLessonTitle(item.title), addedBy:"innertube",
+      id:uid(), ytId:item.id, title:String(item.title||"Aula"), addedBy:"innertube",
       playlistTitle: playlistMeta ? String(playlistMeta.title || "") : "",
       playlistIndex: typeof playlistIndex === "number" ? playlistIndex : null
     });
