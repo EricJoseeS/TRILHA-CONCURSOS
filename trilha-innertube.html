@@ -233,6 +233,21 @@
   .player-tools{margin-left:auto;display:flex;gap:6px;pointer-events:auto;}
   .player-tool{border:1px solid rgba(255,255,255,.18);background:rgba(15,18,24,.82);color:#fff;border-radius:7px;padding:7px 10px;cursor:pointer;font-size:12px;}
   .player-tool:hover{background:rgba(45,51,62,.92);}
+  .custom-player-overlay{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none;background:linear-gradient(rgba(7,10,15,.72),transparent 25%,transparent 64%,rgba(7,10,15,.88));transition:opacity .2s;}
+  .custom-player-overlay.idle{opacity:.18;}
+  .custom-player-head,.custom-player-foot{display:flex;align-items:center;gap:10px;padding:14px 16px;color:#fff;pointer-events:auto;}
+  .custom-player-head{justify-content:space-between;}
+  .custom-player-user{font-size:12px;font-weight:800;letter-spacing:.02em;}
+  .custom-player-course{font-size:11px;color:#cbd1da;margin-top:3px;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .custom-player-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .custom-player-play{width:58px;height:58px;border:1px solid rgba(255,255,255,.35);border-radius:50%;background:rgba(12,17,24,.78);color:#fff;font-size:25px;cursor:pointer;pointer-events:auto;box-shadow:0 8px 25px rgba(0,0,0,.25);}
+  .custom-player-play:hover{background:var(--gold);color:#251b06;}
+  .custom-player-foot{flex-wrap:wrap;padding-top:8px;}
+  .custom-player-progress{width:100%;height:5px;accent-color:var(--gold);cursor:pointer;}
+  .custom-player-control{border:0;background:transparent;color:#fff;cursor:pointer;font-size:13px;padding:5px;}
+  .custom-player-control:hover{color:#e7c56e;}
+  .custom-player-time{font-size:11px;color:#d4d8df;min-width:82px;}
+  .custom-player-spacer{flex:1;}
   .classroom-playlist{background:#11151b;color:#fff;display:flex;flex-direction:column;min-width:0;border-left:1px solid rgba(255,255,255,.08);}
   .playlist-head{padding:14px 15px;border-bottom:1px solid rgba(255,255,255,.09);}
   .playlist-head h3{color:#fff;margin:0 0 4px;font-size:14px;}
@@ -393,6 +408,7 @@
     .quiz-setup .field{min-width:0;}
   }
 </style>
+<script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
 
@@ -1063,6 +1079,64 @@
 
   /* ---------------- Videos ---------------- */
   var activeVideoSubject = null;
+  var customPlayer = null;
+  var customProgressTimer = null;
+
+  function formatPlayerTime(seconds){
+    seconds = Math.max(0, Math.floor(Number(seconds) || 0));
+    var minutes = Math.floor(seconds / 60);
+    var remainder = String(seconds % 60).padStart(2, "0");
+    return minutes+":"+remainder;
+  }
+
+  function updateCustomPlayer(){
+    if(!customPlayer || typeof customPlayer.getDuration !== "function") return;
+    var duration = customPlayer.getDuration() || 0;
+    var current = customPlayer.getCurrentTime() || 0;
+    var progress = document.getElementById("customProgress");
+    var time = document.getElementById("customTime");
+    if(progress && duration) progress.value = String((current / duration) * 100);
+    if(time) time.textContent = formatPlayerTime(current)+" / "+formatPlayerTime(duration);
+  }
+
+  function setupCustomPlayer(){
+    var frame = document.getElementById("lessonFrame");
+    if(!frame) return;
+    if(customPlayer && typeof customPlayer.destroy === "function") customPlayer.destroy();
+    clearInterval(customProgressTimer);
+    customPlayer = null;
+
+    function create(){
+      if(!window.YT || !window.YT.Player){ setTimeout(create, 250); return; }
+      customPlayer = new window.YT.Player("lessonFrame", {
+        events:{
+          onReady:function(){ updateCustomPlayer(); },
+          onStateChange:function(event){
+            var button=document.getElementById("customPlayBtn");
+            if(button) button.textContent = event.data === window.YT.PlayerState.PLAYING ? "❚❚" : "▶";
+          }
+        }
+      });
+      customProgressTimer = setInterval(updateCustomPlayer, 500);
+    }
+    create();
+
+    document.getElementById("customPlayBtn").addEventListener("click",function(){
+      if(!customPlayer) return;
+      var state = customPlayer.getPlayerState();
+      if(state === window.YT.PlayerState.PLAYING) customPlayer.pauseVideo();
+      else customPlayer.playVideo();
+    });
+    document.getElementById("customMuteBtn").addEventListener("click",function(){
+      if(!customPlayer) return;
+      var button=document.getElementById("customMuteBtn");
+      if(customPlayer.isMuted()){ customPlayer.unMute(); button.textContent="🔊"; }
+      else { customPlayer.mute(); button.textContent="🔇"; }
+    });
+    document.getElementById("customProgress").addEventListener("input",function(){
+      if(customPlayer && customPlayer.getDuration()) customPlayer.seekTo(customPlayer.getDuration() * (Number(this.value) / 100), true);
+    });
+  }
 
   function renderVideoSubjectTabs(){
     var wrap = document.getElementById("videoSubjectTabs");
@@ -1140,13 +1214,12 @@
         '<div class="classroom-main">'+
           '<div class="classroom-player">'+
             '<div class="classroom-player-shell" id="playerShell">'+
-              '<div class="player-topbar">'+
-                '<span class="player-badge">'+escapeHtml(s.name)+'</span>'+
-                '<div class="player-tools">'+
-                  '<button class="player-tool" id="classroomFullscreen" title="Tela cheia">⛶ Tela cheia</button>'+
-                '</div>'+
-              '</div>'+
-              '<iframe id="lessonFrame" src="https://www.youtube.com/embed/'+encodeURIComponent(current.ytId)+'?autoplay=0&rel=0&modestbranding=1&playsinline=1" title="'+escapeHtml(current.title)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>'+ 
+              '<iframe id="lessonFrame" src="https://www.youtube.com/embed/'+encodeURIComponent(current.ytId)+'?autoplay=0&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1" title="'+escapeHtml(current.title)+'" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>'+ 
+              '<div class="custom-player-overlay" id="customPlayerOverlay">'+
+                '<div class="custom-player-head"><div><div class="custom-player-user">'+escapeHtml(state.currentProfile)+' está assistindo</div><div class="custom-player-course">'+escapeHtml(current.title)+'</div></div><span class="player-badge">'+escapeHtml(s.name)+'</span></div>'+ 
+                '<div class="custom-player-center"><button class="custom-player-play" id="customPlayBtn" type="button" title="Reproduzir">▶</button></div>'+ 
+                '<div class="custom-player-foot"><input class="custom-player-progress" id="customProgress" type="range" min="0" max="100" value="0" aria-label="Progresso da aula"><button class="custom-player-control" id="customMuteBtn" type="button" title="Ativar ou desativar som">🔊</button><span class="custom-player-time" id="customTime">0:00 / 0:00</span><span class="custom-player-spacer"></span><button class="custom-player-control" id="classroomFullscreen" type="button" title="Tela cheia">⛶</button></div>'+ 
+              '</div>'+ 
             '</div>'+
           '</div>'+
           '<aside class="classroom-playlist">'+
@@ -1257,6 +1330,7 @@
     }
     document.getElementById("askLessonAiBtn").addEventListener("click",function(){askLessonGemini("explain");});
     document.getElementById("quizLessonAiBtn").addEventListener("click",function(){askLessonGemini("quiz");});
+    setupCustomPlayer();
   }
 
   function renderAdmin(){
