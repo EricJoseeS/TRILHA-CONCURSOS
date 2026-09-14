@@ -65,6 +65,51 @@ function normalizeVideo(v) {
   };
 }
 
+async function translateTitle(title) {
+  const original = String(title || "").trim();
+  if (!original) return original;
+  try {
+    const params = new URLSearchParams({ q: original.slice(0, 500), langpair: "en|pt-BR" });
+    const response = await fetch(`https://api.mymemory.translated.net/get?${params}`, {
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!response.ok) throw new Error("Serviço de tradução indisponível");
+    const data = await response.json();
+    const translated = String(data?.responseData?.translatedText || "").trim();
+    if (translated && data?.responseStatus === 200 && !translated.includes("INVALID SOURCE LANGUAGE")) {
+      return translated;
+    }
+  } catch {
+    // Try the secondary provider below before preserving the original title.
+  }
+  try {
+    const params = new URLSearchParams({ client: "gtx", sl: "auto", tl: "pt", dt: "t", q: original });
+    const response = await fetch(`https://translate.googleapis.com/translate_a/single?${params}`, {
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!response.ok) return original;
+    const data = await response.json();
+    const translated = Array.isArray(data?.[0])
+      ? data[0].map(part => part?.[0] || "").join("").trim()
+      : "";
+    return translated || original;
+  } catch {
+    return original;
+  }
+}
+
+async function translateVideoTitles(videos) {
+  const translated = [];
+  for (let index = 0; index < videos.length; index += 4) {
+    const batch = videos.slice(index, index + 4);
+    translated.push(...await Promise.all(batch.map(async video => ({
+      ...video,
+      title: await translateTitle(video.title)
+    }))));
+  }
+  return translated;
+}
+
 function extractPlaylistId(input) {
   const value = String(input || "").trim();
   if (/^[\w-]+$/.test(value)) return value;
@@ -87,9 +132,10 @@ app.get("/api/youtube/search", async (req, res) => {
     const yt = await getYouTube();
     const result = await yt.search(q, { type: String(req.query.filter || "video") });
 
+    const items = await translateVideoTitles((result.videos || []).map(normalizeVideo));
     res.json({
       query: q,
-      items: (result.videos || []).map(normalizeVideo),
+      items,
       playlists: (result.playlists || []).map(normalizePlaylist).filter(p => p.id)
     });
   } catch (error) {
@@ -106,13 +152,14 @@ app.get("/api/youtube/playlist", async (req, res) => {
     const yt = await getYouTube();
     const playlist = await yt.getPlaylist(playlistId);
 
+    const items = await translateVideoTitles((playlist.videos || []).map(normalizeVideo).filter(v => v.id));
     res.json({
       playlist: {
         id: playlistId,
         title: cleanText(playlist.title || playlist.info?.title),
         description: cleanText(playlist.description || playlist.info?.description)
       },
-      items: (playlist.videos || []).map(normalizeVideo).filter(v => v.id)
+      items
     });
   } catch (error) {
     console.error(error);
