@@ -490,7 +490,7 @@
         <select id="trailSelect"></select>
       </div>
       <div class="global-search" id="globalSearch">
-        <input type="text" id="globalSearchInput" placeholder="Buscar aulas, questões, trilhas…" autocomplete="off">
+        <input type="text" id="globalSearchInput" placeholder="Buscar aulas, questões, trilhas… (Admin: também busca no YouTube)" autocomplete="off">
         <div class="global-search-results" id="globalSearchResults"></div>
       </div>
       <div class="topbar-actions">
@@ -2302,15 +2302,10 @@
     return results;
   }
 
-  function renderGlobalSearchResults(results, query){
+  function renderGlobalSearchResults(results, query, yt){
     var box = document.getElementById("globalSearchResults");
-    if(!query){ box.classList.remove("show"); box.innerHTML = ""; return; }
+    if(!query){ box.classList.remove("show"); box.innerHTML = ""; lastGlobalYoutube = null; return; }
     var total = results.trails.length + results.lessons.length + results.questions.length;
-    if(total === 0){
-      box.innerHTML = '<div class="gs-empty">Nada encontrado para "'+escapeHtml(query)+'".</div>';
-      box.classList.add("show");
-      return;
-    }
     var html = "";
     if(results.trails.length){
       html += '<div class="gs-group-title">Trilhas</div>';
@@ -2324,9 +2319,30 @@
       html += '<div class="gs-group-title">Questões</div>';
       html += results.questions.map(function(r,i){ return '<button class="gs-item" data-type="question" data-i="'+i+'">❓ '+escapeHtml(r.question.question.slice(0,70))+'</button>'; }).join("");
     }
+    if(isAdmin() && query.length >= 2){
+      if(yt === undefined){
+        html += '<div class="gs-group-title">YouTube</div><div class="gs-empty">Buscando no YouTube…</div>';
+      } else if(yt && yt.items && yt.items.length){
+        lastGlobalYoutube = yt;
+        html += '<div class="gs-group-title">'+(yt.playlist ? 'Playlist do YouTube' : 'YouTube')+'</div>';
+        if(yt.playlist && yt.meta && yt.meta.title){
+          html += '<div style="padding:2px 12px 6px;font-size:11.5px;color:var(--slate);display:flex;justify-content:space-between;align-items:center;gap:8px;">'+
+            '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escapeHtml(yt.meta.title)+'</span>'+
+            '<button class="btn small gold" id="gsAddAllBtn" style="flex-shrink:0;">Adicionar todos</button></div>';
+        }
+        html += yt.items.map(function(item,i){
+          return '<button class="gs-item" data-type="ytadd" data-i="'+i+'">➕ '+escapeHtml(item.title||"Sem título")+' <span style="color:var(--slate)">'+escapeHtml(item.author||item.duration||"")+'</span></button>';
+        }).join("");
+      } else if(yt === null && total === 0){
+        html += '<div class="gs-group-title">YouTube</div><div class="gs-empty">Nenhum resultado no YouTube (ou servidor InnerTube indisponível).</div>';
+      }
+    }
+    if(!html){
+      html = '<div class="gs-empty">Nada encontrado para "'+escapeHtml(query)+'".</div>';
+    }
     box.innerHTML = html;
     box.classList.add("show");
-    box.querySelectorAll(".gs-item").forEach(function(btn){
+    box.querySelectorAll('.gs-item[data-type="trail"], .gs-item[data-type="lesson"], .gs-item[data-type="question"]').forEach(function(btn){
       btn.addEventListener("click", function(){
         var type = btn.getAttribute("data-type");
         var i = parseInt(btn.getAttribute("data-i"),10);
@@ -2350,11 +2366,73 @@
         box.classList.remove("show");
       });
     });
+    box.querySelectorAll('.gs-item[data-type="ytadd"]').forEach(function(btn){
+      btn.addEventListener("click", function(e){
+        e.stopPropagation();
+        var i = parseInt(btn.getAttribute("data-i"),10);
+        var item = lastGlobalYoutube && lastGlobalYoutube.items[i];
+        var subject = targetSubjectForQuickAdd();
+        if(!item) return;
+        if(!subject){ toast("Crie uma matéria primeiro em Ajustes."); return; }
+        if(addInnerTubeVideo(item, subject, lastGlobalYoutube.meta, lastGlobalYoutube.playlist ? i : null)){
+          save(); renderAdmin(); renderVideos();
+          toast("Aula adicionada a "+subject.name+".");
+        } else {
+          toast("Essa aula já está em "+subject.name+".");
+        }
+      });
+    });
+    var addAllBtn = document.getElementById("gsAddAllBtn");
+    if(addAllBtn){
+      addAllBtn.addEventListener("click", function(e){
+        e.stopPropagation();
+        var subject = targetSubjectForQuickAdd();
+        if(!subject || !lastGlobalYoutube) return;
+        var added = 0;
+        lastGlobalYoutube.items.forEach(function(item, idx){ if(addInnerTubeVideo(item, subject, lastGlobalYoutube.meta, idx)) added++; });
+        save(); renderAdmin(); renderVideos();
+        toast(added+" aula(s) adicionada(s) a "+subject.name+".");
+      });
+    }
+  }
+
+  var lastGlobalYoutube = null;
+  var globalSearchDebounce = null;
+
+  function targetSubjectForQuickAdd(){
+    return subjectById(activeVideoSubject) || state.subjects[0] || null;
+  }
+
+  function isPlaylistQuery(q){
+    return /[?&]list=/i.test(q) || /^(PL|UU|LL|FL|RD|OL)[\w-]{8,}$/i.test(q.trim());
+  }
+
+  function runGlobalYoutubeSearch(query, localResults){
+    var playlist = isPlaylistQuery(query);
+    var endpoint = playlist ? "/api/youtube/playlist" : "/api/youtube/search";
+    var params = playlist ? { url: query } : { q: query, filter: "video" };
+    fetch(innerTubeEndpoint(endpoint, params))
+      .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, data:d }; }); })
+      .then(function(result){
+        if(document.getElementById("globalSearchInput").value.trim() !== query) return; // stale response
+        if(!result.ok || result.data.error){ renderGlobalSearchResults(localResults, query, null); return; }
+        var items = playlist ? (result.data.items||[]) : (result.data.items||[]).slice(0,5);
+        renderGlobalSearchResults(localResults, query, { playlist:playlist, items:items, meta:result.data.playlist||null });
+      })
+      .catch(function(){ renderGlobalSearchResults(localResults, query, null); });
   }
 
   document.getElementById("globalSearchInput").addEventListener("input", function(){
     var q = this.value;
-    renderGlobalSearchResults(performGlobalSearch(q), q.trim());
+    var trimmed = q.trim();
+    var localResults = performGlobalSearch(q);
+    clearTimeout(globalSearchDebounce);
+    if(isAdmin() && trimmed.length >= 2){
+      renderGlobalSearchResults(localResults, trimmed, undefined); // shows "Buscando no YouTube…"
+      globalSearchDebounce = setTimeout(function(){ runGlobalYoutubeSearch(trimmed, localResults); }, 450);
+    } else {
+      renderGlobalSearchResults(localResults, trimmed);
+    }
   });
   document.addEventListener("click", function(e){
     if(!e.target.closest("#globalSearch")){
