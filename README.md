@@ -74,6 +74,21 @@ A interface também mantém uma opção de chave local como fallback, mas o modo
 
 Como alguns PowerShells podem ter conflitos de PATH com `npm.cmd`, você pode iniciar diretamente pelo arquivo `iniciar-trilha.cmd`. Ele chama o `node.exe` pelo caminho padrão do Windows.
 
+## Novidades: gamificação e estudo inteligente
+
+**Gamificação**
+- Sistema de XP e níveis: assistir aulas (+8 XP), responder questões (+10/+2 XP) e manter o streak (+5 XP/dia) fazem você subir de nível, com títulos de "Iniciante" a "Lenda dos Estudos".
+- Meta diária configurável em Ajustes (padrão: 3 ações/dia), com barra de progresso no Painel.
+- Calendário de constância (heatmap estilo GitHub) mostrando os últimos ~14 dias de atividade.
+- 12 conquistas desbloqueáveis (primeira aula, primeira questão, streaks de 3/7/30 dias, 50/100 questões, gabarito 100%, matéria dominada, níveis 5/10, revisor dedicado), com notificação e registro na atividade recente.
+
+**Estudo mais inteligente**
+- **Revisão espaçada (SRS)**: toda questão respondida entra num sistema de repetição espaçada (Leitner, 5 caixas, intervalos de 1 a 35 dias). A aba Questões mostra quantas revisões estão prontas agora e permite iniciar uma sessão só com elas, misturando matérias.
+- **Resumos/explicações com transcrição real**: ao clicar em "Explicar aula" ou "Criar questões" dentro de uma aula, o servidor tenta buscar a transcrição real do vídeo (via `youtubei.js`) e envia esse conteúdo ao Gemini, em vez de basear-se só no título. Quando a transcrição não está disponível (nem toda aula tem legendas), o sistema avisa e usa o modo anterior (baseado no título) com o mesmo cuidado para não inventar conteúdo.
+- **Busca global**: campo de busca na barra superior que encontra aulas, questões e trilhas por texto, e leva você direto para o conteúdo (trocando de trilha/matéria automaticamente se necessário).
+
+Essas mudanças são compatíveis com backups/exportações antigos — ao carregar um `trilha-backup.json` de uma versão anterior, os novos campos (XP, conquistas, calendário de atividade, revisão espaçada, meta diária) são preenchidos automaticamente com valores padrão.
+
 ## Interface de sala de aula
 
 A aba **Aulas** agora usa uma interface de sala de aula:

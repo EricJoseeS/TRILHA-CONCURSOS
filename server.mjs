@@ -189,6 +189,30 @@ app.get("/api/youtube/playlist", async (req, res) => {
   }
 });
 
+app.get("/api/youtube/transcript", async (req, res) => {
+  try {
+    const id = String(req.query.id || "").trim();
+    if (!/^[\w-]{11}$/.test(id)) return res.status(400).json({ error: "ID de vídeo inválido." });
+
+    const yt = await getYouTube();
+    const info = await yt.getInfo(id);
+    let text = "";
+    try {
+      const transcriptInfo = await info.getTranscript();
+      const segments = transcriptInfo?.transcript?.content?.body?.initial_segments || [];
+      text = segments.map(seg => cleanText(seg?.snippet)).filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    } catch {
+      text = "";
+    }
+    if (!text) return res.status(404).json({ error: "Transcrição não disponível para este vídeo." });
+    if (text.length > 12000) text = text.slice(0, 12000) + "…";
+    res.json({ id, text, length: text.length });
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({ error: error?.message || "Falha ao obter transcrição." });
+  }
+});
+
 app.listen(PORT, () => console.log(`Trilha InnerTube em http://localhost:${PORT}`));
 app.get("/api/gemini/health", (req, res) => {
   res.json({ ok: true, configured: Boolean(GEMINI_API_KEY), model: DEFAULT_GEMINI_MODEL });

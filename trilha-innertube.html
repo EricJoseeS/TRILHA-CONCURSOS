@@ -364,6 +364,50 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
 
+  /* ---------- Gamification: level, goal, achievements, heatmap ---------- */
+  .level-row{display:flex; align-items:center; gap:14px; margin-bottom:16px;}
+  .level-badge{width:52px; height:52px; min-width:52px; border-radius:50%; background:var(--gold-soft); color:#7A5A16; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:19px; flex:0 0 52px;}
+  .level-copy{flex:1; min-width:0;}
+  .level-title{font-weight:800; font-size:14px;}
+  .level-sub{font-size:11.5px; color:var(--slate); margin-top:2px;}
+  .xp-track{height:8px; border-radius:4px; background:var(--line); overflow:hidden; margin-top:8px;}
+  .xp-fill{height:100%; background:var(--gold); border-radius:4px; transition:width .3s;}
+  .goal-block{margin-top:16px; padding-top:16px; border-top:1px dashed var(--line);}
+  .goal-head{display:flex; justify-content:space-between; align-items:baseline; font-size:12.5px; color:var(--slate); margin-bottom:7px;}
+  .goal-head b{color:var(--ink); font-size:13.5px;}
+  .goal-track{height:9px; border-radius:5px; background:var(--line); overflow:hidden;}
+  .goal-fill{height:100%; background:var(--forest); border-radius:5px; transition:width .3s;}
+  .goal-done{color:var(--forest); font-weight:700; font-size:12.5px; margin-top:7px;}
+
+  .heatmap-wrap{overflow-x:auto; padding-bottom:4px;}
+  .heatmap{display:grid; grid-auto-flow:column; grid-template-rows:repeat(7,12px); gap:3px;}
+  .heatmap-cell{width:12px; height:12px; border-radius:3px; background:var(--line);}
+  .heatmap-legend{display:flex; align-items:center; gap:5px; margin-top:10px; font-size:11px; color:var(--slate);}
+  .heatmap-legend .heatmap-cell{width:10px; height:10px;}
+
+  .achv-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px;}
+  .achv-item{border:1px solid var(--line); border-radius:10px; padding:13px 10px; text-align:center; background:var(--paper);}
+  .achv-item.unlocked{background:var(--gold-soft); border-color:var(--gold);}
+  .achv-item.locked{opacity:.4; filter:grayscale(1);}
+  .achv-icon{font-size:24px; margin-bottom:6px;}
+  .achv-title{font-size:11.5px; font-weight:800;}
+  .achv-desc{font-size:10px; color:var(--slate); margin-top:3px; line-height:1.3;}
+
+  .srs-card{background:var(--forest-soft); border-color:var(--forest);}
+  .srs-card h3{color:#1F4732;}
+
+  /* ---------- Global search ---------- */
+  .global-search{position:relative; flex:1; max-width:280px; margin:0 6px;}
+  .global-search input{padding:9px 12px; font-size:13px;}
+  .global-search-results{position:absolute; top:44px; left:0; right:0; background:var(--paper-raised); border:1px solid var(--line); border-radius:10px; box-shadow:0 14px 35px rgba(18,24,31,.16); max-height:360px; overflow:auto; display:none; z-index:50;}
+  .global-search-results.show{display:block;}
+  .gs-group-title{font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.03em; color:var(--slate); padding:9px 12px 3px;}
+  .gs-item{display:block; width:100%; text-align:left; padding:8px 12px; border:none; background:none; cursor:pointer; font-size:13px; color:var(--ink); border-bottom:1px dashed var(--line); font-family:var(--font-body);}
+  .gs-item:hover{background:var(--paper);}
+  .gs-empty{padding:14px 12px; color:var(--slate); font-size:12.5px;}
+  @media(max-width:900px){.global-search{max-width:190px;}}
+  @media(max-width:760px){.global-search{display:none;}}
+
   .bottomnav{display:none;}
 
   @media (max-width: 860px){
@@ -445,6 +489,10 @@
         <label for="trailSelect">Trilha</label>
         <select id="trailSelect"></select>
       </div>
+      <div class="global-search" id="globalSearch">
+        <input type="text" id="globalSearchInput" placeholder="Buscar aulas, questões, trilhas…" autocomplete="off">
+        <div class="global-search-results" id="globalSearchResults"></div>
+      </div>
       <div class="topbar-actions">
         <button class="icon-btn" id="newProfileBtn" title="Novo perfil">＋</button>
         <button class="icon-btn" id="exportBtn" title="Exportar progresso">⇩</button>
@@ -483,6 +531,22 @@
           <h3>Sua trilha por matéria</h3>
           <div class="hint" style="margin:-7px 0 10px;">Progresso calculado pelo tempo das aulas concluídas.</div>
           <div id="subjectTrail"></div>
+        </div>
+
+        <div class="bento" style="margin-top:16px;">
+          <div class="card">
+            <h3>Nível &amp; meta diária</h3>
+            <div id="levelBlock"></div>
+          </div>
+          <div class="card">
+            <h3>Constância</h3>
+            <div id="streakHeatmap"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <h3>Conquistas</h3>
+          <div class="achv-grid" id="achievementsGrid"></div>
         </div>
       </section>
 
@@ -553,6 +617,13 @@
         </div>
 
         <div id="quizSetupWrap">
+          <div class="card srs-card" style="margin-bottom:16px;">
+            <h3>🔁 Revisão espaçada</h3>
+            <p class="hint" style="margin:-4px 0 12px;">Toda questão respondida entra num ciclo de repetição espaçada — o Trilha te mostra de novo no momento certo para fixar o conteúdo.</p>
+            <div class="status-line"><span class="status-dot on"></span><span><b id="srsDueCount">0</b> questão(ões) prontas para revisar agora</span></div>
+            <button class="btn gold" id="startSrsBtn" style="margin-top:12px;">Iniciar revisão</button>
+          </div>
+
           <div class="quiz-setup">
             <div class="field">
               <label>Matéria</label>
@@ -684,6 +755,16 @@
         </div>
 
         <div class="settings-block">
+          <h3>Metas e gamificação</h3>
+          <div class="field">
+            <label>Meta diária (aulas assistidas + questões respondidas)</label>
+            <input type="number" id="dailyGoalInput" min="1" max="50" value="3">
+          </div>
+          <button class="btn ghost small" id="saveDailyGoalBtn">Salvar meta</button>
+          <div class="hint">Usada na barra de progresso do dia no Painel. XP, níveis e conquistas são calculados automaticamente conforme você estuda.</div>
+        </div>
+
+        <div class="settings-block">
           <h3>Matérias</h3>
           <div id="subjManageList"></div>
           <div class="field-row" style="margin-top:12px;">
@@ -736,8 +817,8 @@
   function seedState(){
     return {
       profiles: {
-        "Você": { role:"student", createdAt: Date.now(), streak: 0, lastActiveDay: null, watched: {}, answers: {}, xp: 0 },
-        "Admin": { role:"admin", createdAt: Date.now(), streak: 0, lastActiveDay: null, watched: {}, answers: {}, xp: 0 }
+        "Você": { role:"student", createdAt: Date.now(), streak: 0, lastActiveDay: null, watched: {}, answers: {}, xp: 0, achievements:{}, activityDays:{}, srs:{}, srsReviewsDone:0 },
+        "Admin": { role:"admin", createdAt: Date.now(), streak: 0, lastActiveDay: null, watched: {}, answers: {}, xp: 0, achievements:{}, activityDays:{}, srs:{}, srsReviewsDone:0 }
       },
       currentProfile: "Você",
       subjects: [
@@ -755,7 +836,7 @@
           mkQ("Como se diz 'aprendizagem' em inglês?", ["Learning","Teaching","Reading","Speaking"], 0, "'Learning' significa aprendizagem.")
         ]}
       ],
-      settings: { geminiKey:"", geminiModel:"gemini-3.8-flash", geminiServerEndpoint:DEFAULT_ENDPOINT, youtubeKey:"", innerTubeEndpoint:DEFAULT_ENDPOINT, lastBotRun:0 },
+      settings: { geminiKey:"", geminiModel:"gemini-3.8-flash", geminiServerEndpoint:DEFAULT_ENDPOINT, youtubeKey:"", innerTubeEndpoint:DEFAULT_ENDPOINT, lastBotRun:0, dailyGoal:3 },
       activityLog: [
         { date: Date.now(), type:"info", message:"Plataforma criada. Bem-vindo(a) ao Trilha!" }
       ]
@@ -805,10 +886,18 @@
       data.profiles.Admin = { role:"admin", createdAt:Date.now(), streak:0, lastActiveDay:null, watched:{}, answers:{}, xp:0 };
     }
     Object.keys(data.profiles || {}).forEach(function(name){
-      data.profiles[name].role = data.profiles[name].role || (name === "Admin" ? "admin" : "student");
-      data.profiles[name].watched = data.profiles[name].watched || {};
-      data.profiles[name].answers = data.profiles[name].answers || {};
+      var prof = data.profiles[name];
+      prof.role = prof.role || (name === "Admin" ? "admin" : "student");
+      prof.watched = prof.watched || {};
+      prof.answers = prof.answers || {};
+      prof.xp = prof.xp || 0;
+      prof.achievements = prof.achievements || {};
+      prof.activityDays = prof.activityDays || {};
+      prof.srs = prof.srs || {};
+      prof.srsReviewsDone = prof.srsReviewsDone || 0;
     });
+    data.settings = data.settings || {};
+    data.settings.dailyGoal = data.settings.dailyGoal || 3;
     if(!data.trails || !Array.isArray(data.trails) || data.trails.length===0){
       if(data.subjects && data.subjects[0] && data.subjects[0].id==="mat") data.subjects = makeInssSubjects();
       data.trails = [{ id:"trilha-inicial", name:"Minha trilha", description:"Plano de estudos", subjects:data.subjects||[] }];
@@ -878,13 +967,123 @@
     var yesterday = new Date(Date.now()-DAY_MS).toDateString();
     p.streak = (p.lastActiveDay === yesterday) ? (p.streak+1) : 1;
     p.lastActiveDay = today;
+    addXp(p, 5);
     save();
+    checkAchievements(p);
   }
 
   function log(type, message){
     state.activityLog.unshift({date:Date.now(), type:type, message:message});
     state.activityLog = state.activityLog.slice(0,60);
     save();
+  }
+
+  /* ---------------- Gamification: XP, levels, daily activity, achievements ---------------- */
+  function todayKey(d){
+    d = d || new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+
+  function computeLevel(xp){
+    xp = xp || 0;
+    var level = 1, need = 60, remaining = xp;
+    while(remaining >= need){
+      remaining -= need;
+      level++;
+      need = 60 + (level-1)*25;
+    }
+    return { level:level, into:remaining, span:need, pct: Math.round((remaining/need)*100) };
+  }
+
+  var LEVEL_TITLES = ["Iniciante","Aprendiz","Disciplinado(a)","Estudioso(a)","Avançado(a)","Estrategista","Mestre da Trilha","Especialista","Referência","Lenda dos Estudos"];
+  function titleForLevel(level){
+    return LEVEL_TITLES[Math.min(Math.floor((level-1)/2), LEVEL_TITLES.length-1)];
+  }
+
+  function addXp(p, amount){
+    var before = computeLevel(p.xp||0).level;
+    p.xp = (p.xp||0) + amount;
+    var after = computeLevel(p.xp).level;
+    if(after > before){
+      toast("🎉 Você subiu para o nível "+after+" — "+titleForLevel(after)+"!");
+      log("xp","Nível "+after+" alcançado: "+titleForLevel(after)+".");
+    }
+  }
+
+  function recordActivity(p, n){
+    p.activityDays = p.activityDays || {};
+    var key = todayKey();
+    p.activityDays[key] = (p.activityDays[key]||0) + (n||1);
+  }
+
+  function todayActivityCount(p){
+    return (p.activityDays && p.activityDays[todayKey()]) || 0;
+  }
+
+  var ACHIEVEMENTS = [
+    { id:"first_lesson", icon:"🎬", title:"Primeiros passos", desc:"Assista sua primeira aula.", test:function(p){ return Object.keys(p.watched||{}).length >= 1; } },
+    { id:"first_quiz", icon:"✍️", title:"Primeira resposta", desc:"Responda sua primeira questão.", test:function(p){ return Object.keys(p.answers||{}).length >= 1; } },
+    { id:"streak_3", icon:"🔥", title:"Pegando ritmo", desc:"3 dias seguidos de estudo.", test:function(p){ return (p.streak||0) >= 3; } },
+    { id:"streak_7", icon:"🔥🔥", title:"Semana completa", desc:"7 dias seguidos de estudo.", test:function(p){ return (p.streak||0) >= 7; } },
+    { id:"streak_30", icon:"🏆", title:"Um mês de foco", desc:"30 dias seguidos de estudo.", test:function(p){ return (p.streak||0) >= 30; } },
+    { id:"quiz_50", icon:"📚", title:"Maratonista", desc:"Responda 50 questões.", test:function(p){ return Object.keys(p.answers||{}).length >= 50; } },
+    { id:"quiz_100", icon:"📖", title:"Banca de provas", desc:"Responda 100 questões.", test:function(p){ return Object.keys(p.answers||{}).length >= 100; } },
+    { id:"perfect_quiz", icon:"💯", title:"Gabarito", desc:"Acerte 100% em um quiz (mín. 5 questões).", test:function(p){ return !!p._hasPerfectQuiz; } },
+    { id:"subject_master", icon:"🎓", title:"Mestre da matéria", desc:"Conclua 100% de uma matéria.", test:function(p){
+      return (state.subjects||[]).some(function(s){
+        if(!s.videos.length && !s.questions.length) return false;
+        var vAll = !s.videos.length || s.videos.every(function(v){ return p.watched[v.id]; });
+        var qAll = !s.questions.length || s.questions.every(function(q){ return p.answers[q.id]; });
+        return vAll && qAll;
+      });
+    } },
+    { id:"level_5", icon:"⭐", title:"Nível 5", desc:"Alcance o nível 5.", test:function(p){ return computeLevel(p.xp||0).level >= 5; } },
+    { id:"level_10", icon:"👑", title:"Nível 10", desc:"Alcance o nível 10.", test:function(p){ return computeLevel(p.xp||0).level >= 10; } },
+    { id:"srs_10", icon:"🔁", title:"Revisor(a) dedicado(a)", desc:"Revise 10 questões no modo revisão espaçada.", test:function(p){ return (p.srsReviewsDone||0) >= 10; } }
+  ];
+
+  function checkAchievements(p){
+    p.achievements = p.achievements || {};
+    var unlocked = [];
+    ACHIEVEMENTS.forEach(function(a){
+      if(!p.achievements[a.id] && a.test(p)) unlocked.push(a);
+    });
+    if(unlocked.length){
+      unlocked.forEach(function(a){ p.achievements[a.id] = Date.now(); });
+      save();
+      unlocked.forEach(function(a){
+        toast("🏅 Conquista desbloqueada: "+a.title);
+        log("conquista", "Conquista desbloqueada: "+a.icon+" "+a.title+".");
+      });
+    }
+    return unlocked;
+  }
+
+  /* ---------------- Spaced repetition (Leitner system) ---------------- */
+  var SRS_INTERVAL_DAYS = {1:1, 2:3, 3:7, 4:16, 5:35};
+
+  function scheduleAfterAnswer(p, questionId, correct){
+    p.srs = p.srs || {};
+    var entry = p.srs[questionId] || { box:0, due:0 };
+    entry.box = correct ? Math.min((entry.box||0)+1, 5) : 1;
+    var days = SRS_INTERVAL_DAYS[entry.box] || 1;
+    entry.due = Date.now() + days*DAY_MS;
+    p.srs[questionId] = entry;
+  }
+
+  function getDueQuestions(subjectFilterId){
+    var p = currentProfile();
+    p.srs = p.srs || {};
+    var due = [];
+    (state.subjects||[]).forEach(function(s){
+      if(subjectFilterId && s.id !== subjectFilterId) return;
+      (s.questions||[]).forEach(function(q){
+        var entry = p.srs[q.id];
+        if(!entry || entry.due <= Date.now()) due.push({ q:q, s:s, due: entry ? entry.due : 0 });
+      });
+    });
+    due.sort(function(a,b){ return a.due - b.due; });
+    return due;
   }
 
   function toast(msg){
@@ -1117,6 +1316,69 @@
         '<div class="trail-progress-wrap"><div class="trail-track"><div class="trail-fill" style="width:'+pct+'%; background:'+s.color+'"></div></div><span class="trail-pct">'+pct+'%</span></div>'+ 
         '<div class="trail-detail"><span>'+vDone+'/'+vTotal+' aulas concluídas · '+qDone+'/'+qTotal+' questões</span><span>'+formatStudyTime(subjectDoneSeconds)+' de '+formatStudyTime(subjectTotalSeconds)+'</span></div></div>';
     }).join("") || '<div class="empty-note">Adicione uma matéria em Ajustes.</div>';
+
+    renderGamification(p);
+  }
+
+  function renderGamification(p){
+    p = p || currentProfile();
+
+    var lvl = computeLevel(p.xp||0);
+    var goal = state.settings.dailyGoal || 3;
+    var todayCount = todayActivityCount(p);
+    var goalPct = Math.min(100, Math.round((todayCount/goal)*100));
+    var levelBlock = document.getElementById("levelBlock");
+    if(levelBlock){
+      levelBlock.innerHTML =
+        '<div class="level-row">'+
+          '<div class="level-badge">'+lvl.level+'</div>'+
+          '<div class="level-copy">'+
+            '<div class="level-title">'+escapeHtml(titleForLevel(lvl.level))+'</div>'+
+            '<div class="level-sub">'+lvl.into+' / '+lvl.span+' XP para o próximo nível · '+(p.xp||0)+' XP total</div>'+
+            '<div class="xp-track"><div class="xp-fill" style="width:'+lvl.pct+'%"></div></div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="goal-block">'+
+          '<div class="goal-head"><span>Meta de hoje</span><b>'+todayCount+' / '+goal+'</b></div>'+
+          '<div class="goal-track"><div class="goal-fill" style="width:'+goalPct+'%"></div></div>'+
+          (todayCount>=goal ? '<div class="goal-done">✅ Meta diária concluída!</div>' : '')+
+        '</div>';
+    }
+
+    var heatmapEl = document.getElementById("streakHeatmap");
+    if(heatmapEl){
+      var days = [];
+      var weeks = 14;
+      for(var i=weeks*7-1;i>=0;i--){
+        var d = new Date(Date.now()-i*DAY_MS);
+        days.push({ key: todayKey(d), count: (p.activityDays && p.activityDays[todayKey(d)]) || 0 });
+      }
+      var cells = days.map(function(day){
+        var level = day.count<=0?0:(day.count===1?1:(day.count<=3?2:3));
+        var colors = ["var(--line)","#EBD9AE","#D9AE58","var(--gold)"];
+        return '<div class="heatmap-cell" style="background:'+colors[level]+'" title="'+day.key+': '+day.count+' ação(ões)"></div>';
+      }).join("");
+      heatmapEl.innerHTML =
+        '<div class="heatmap-wrap"><div class="heatmap">'+cells+'</div></div>'+
+        '<div class="heatmap-legend">menos'+
+          '<span class="heatmap-cell" style="background:var(--line)"></span>'+
+          '<span class="heatmap-cell" style="background:#EBD9AE"></span>'+
+          '<span class="heatmap-cell" style="background:#D9AE58"></span>'+
+          '<span class="heatmap-cell" style="background:var(--gold)"></span>'+
+        'mais</div>';
+    }
+
+    var achvGrid = document.getElementById("achievementsGrid");
+    if(achvGrid){
+      achvGrid.innerHTML = ACHIEVEMENTS.map(function(a){
+        var unlocked = !!(p.achievements && p.achievements[a.id]);
+        return '<div class="achv-item '+(unlocked?'unlocked':'locked')+'">'+
+          '<div class="achv-icon">'+a.icon+'</div>'+
+          '<div class="achv-title">'+escapeHtml(a.title)+'</div>'+
+          '<div class="achv-desc">'+escapeHtml(a.desc)+'</div>'+
+        '</div>';
+      }).join("");
+    }
   }
 
   function escapeHtml(str){
@@ -1240,7 +1502,7 @@
           '</div>'+
           '<div class="lesson-ai">'+
             '<h4>🤖 Estude esta aula com o Gemini</h4>'+
-            '<p>Peça uma explicação, resumo ou questões usando o título e o contexto desta aula.</p>'+
+            '<p>Quando disponível, usamos a transcrição real da aula para uma explicação mais precisa (senão, o Gemini se baseia no título).</p>'+
             '<button class="btn ghost small" id="askLessonAiBtn">✨ Explicar aula</button>'+
             '<button class="btn ghost small" id="quizLessonAiBtn">⚡ Criar questões</button>'+
             '<div class="lesson-ai-output" id="lessonAiOutput"></div>'+
@@ -1283,8 +1545,15 @@
 
     document.getElementById("markLessonBtn").addEventListener("click",function(){
       if(p.watched[current.id]) delete p.watched[current.id];
-      else { p.watched[current.id]=true; touchStreak(); }
-      save(); renderVideos(); renderDashboard();
+      else {
+        p.watched[current.id]=true;
+        touchStreak();
+        addXp(p, 8);
+        recordActivity(p, 1);
+      }
+      save();
+      checkAchievements(p);
+      renderVideos(); renderDashboard();
     });
 
     document.getElementById("prevLessonBtn").addEventListener("click",function(){
@@ -1310,15 +1579,28 @@
     function askLessonGemini(mode){
       var out=document.getElementById("lessonAiOutput");
       out.classList.add("show");
-      out.textContent="Consultando o Gemini…";
+      out.textContent="Buscando a transcrição da aula…";
       var instruction = mode==="quiz"
         ? "Crie 5 questões de múltipla escolha em português sobre esta aula, com 4 alternativas, indique a resposta correta e explique cada resposta."
         : "Explique esta aula em linguagem clara para um estudante, faça um resumo em tópicos e destaque o que é mais importante revisar.";
-      var prompt="Você é o tutor da plataforma Trilha. Matéria: "+s.name+". Aula: "+current.title+". "+instruction+
-        " Não invente detalhes específicos que não estejam disponíveis; deixe claro quando o conteúdo exato da aula não foi fornecido.";
-      callGemini(prompt).then(function(text){ out.textContent=text; }).catch(function(err){
-        out.textContent="Não foi possível consultar o Gemini: "+err.message;
-      });
+      fetch(innerTubeEndpoint("/api/youtube/transcript", {id: current.ytId}))
+        .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, data:d}; }); })
+        .catch(function(){ return {ok:false, data:null}; })
+        .then(function(result){
+          var hasTranscript = result.ok && result.data && result.data.text;
+          out.textContent = "Consultando o Gemini…";
+          var prompt = "Você é o tutor da plataforma Trilha. Matéria: "+s.name+". Aula: \""+current.title+"\". ";
+          if(hasTranscript){
+            prompt += "Segue a transcrição real da fala da aula (pode conter pequenos erros de reconhecimento automático de fala):\n\n\""+result.data.text+"\"\n\n"+instruction+" Baseie-se no conteúdo da transcrição acima, não apenas no título.";
+          } else {
+            prompt += instruction+" A transcrição desta aula não está disponível; não invente detalhes específicos que não estejam disponíveis e deixe claro quando o conteúdo exato da aula não foi fornecido.";
+          }
+          return callGemini(prompt);
+        })
+        .then(function(text){ out.textContent=text; })
+        .catch(function(err){
+          out.textContent="Não foi possível consultar o Gemini: "+err.message;
+        });
     }
     document.getElementById("askLessonAiBtn").addEventListener("click",function(){askLessonGemini("explain");});
     document.getElementById("quizLessonAiBtn").addEventListener("click",function(){askLessonGemini("quiz");});
@@ -1551,6 +1833,8 @@
     populateSelect(document.getElementById("aiSubjectSelect"));
     document.getElementById("quizSetupWrap").style.display = "";
     document.getElementById("quizPlayWrap").style.display = "none";
+    var dueEl = document.getElementById("srsDueCount");
+    if(dueEl) dueEl.textContent = getDueQuestions(null).length;
     renderQuestionBank();
   }
 
@@ -1599,7 +1883,17 @@
     if(!s || s.questions.length===0){ toast("Esta matéria não tem questões ainda."); return; }
     var count = parseInt(document.getElementById("quizCount").value,10);
     var pool = s.questions.slice().sort(function(){return Math.random()-0.5;}).slice(0, count);
-    quizState = { subject:s, questions:pool, index:0, correctCount:0, answered:false };
+    quizState = { subject:s, questions:pool, tags:pool.map(function(){return s.name;}), index:0, correctCount:0, answered:false, isSrs:false };
+    document.getElementById("quizSetupWrap").style.display = "none";
+    document.getElementById("quizPlayWrap").style.display = "";
+    renderQuizQuestion();
+  });
+
+  document.getElementById("startSrsBtn").addEventListener("click", function(){
+    var due = getDueQuestions(null);
+    if(!due.length){ toast("Nenhuma questão para revisar agora. 🎉"); return; }
+    var pool = due.slice(0,20);
+    quizState = { subject:null, questions:pool.map(function(d){return d.q;}), tags:pool.map(function(d){return d.s.name;}), index:0, correctCount:0, answered:false, isSrs:true };
     document.getElementById("quizSetupWrap").style.display = "none";
     document.getElementById("quizPlayWrap").style.display = "";
     renderQuizQuestion();
@@ -1608,10 +1902,11 @@
   function renderQuizQuestion(){
     if(quizState.index >= quizState.questions.length){ renderQuizResult(); return; }
     var q = quizState.questions[quizState.index];
+    var tag = (quizState.tags && quizState.tags[quizState.index]) || (quizState.subject && quizState.subject.name) || "";
     quizState.answered = false;
-    document.getElementById("qProgress").textContent = "Questão "+(quizState.index+1)+" de "+quizState.questions.length+" — "+quizState.subject.name;
+    document.getElementById("qProgress").textContent = (quizState.isSrs ? "Revisão espaçada — questão " : "Questão ")+(quizState.index+1)+" de "+quizState.questions.length+" — "+tag;
     var card = document.getElementById("qCard");
-    card.innerHTML = '<span class="q-tag">'+escapeHtml(quizState.subject.name)+'</span>'+
+    card.innerHTML = '<span class="q-tag">'+(quizState.isSrs?'🔁 ':'')+escapeHtml(tag)+'</span>'+
       '<div class="q-text">'+escapeHtml(q.question)+'</div>'+
       q.options.map(function(opt,i){ return '<button class="opt" data-i="'+i+'">'+escapeHtml(opt)+'</button>'; }).join("")+
       '<div id="qExplain"></div>'+
@@ -1624,9 +1919,13 @@
         var isCorrect = chosen === q.correctIndex;
         var p = currentProfile();
         p.answers[q.id] = { chosen:chosen, correct:isCorrect, date:Date.now() };
-        if(isCorrect){ quizState.correctCount++; p.xp += 10; } else { p.xp += 2; }
+        if(isCorrect){ quizState.correctCount++; addXp(p, 10); } else { addXp(p, 2); }
+        scheduleAfterAnswer(p, q.id, isCorrect);
+        if(quizState.isSrs) p.srsReviewsDone = (p.srsReviewsDone||0) + 1;
+        recordActivity(p, 1);
         touchStreak();
         save();
+        checkAchievements(p);
         card.querySelectorAll(".opt").forEach(function(b,i){
           b.disabled = true;
           if(i===q.correctIndex) b.classList.add("correct");
@@ -1647,12 +1946,20 @@
   function renderQuizResult(){
     document.getElementById("qProgress").textContent = "";
     var pct = Math.round((quizState.correctCount/quizState.questions.length)*100);
+    var p = currentProfile();
+    if(pct===100 && quizState.questions.length>=5){
+      p._hasPerfectQuiz = true;
+      save();
+      checkAchievements(p);
+    }
     document.getElementById("qCard").innerHTML =
       '<div class="result-card"><div class="big">'+pct+'%</div>'+
       '<div style="color:var(--slate); margin-bottom:20px;">Você acertou '+quizState.correctCount+' de '+quizState.questions.length+' questões.</div>'+
       '<button class="btn gold" id="backToSetup">Voltar</button></div>';
     document.getElementById("backToSetup").addEventListener("click", renderQuizSetup);
-    log("quiz", "Quiz de "+quizState.subject.name+" concluído com "+pct+"% de acerto.");
+    if(quizState.isSrs) log("quiz", "Revisão espaçada concluída com "+pct+"% de acerto.");
+    else log("quiz", "Quiz de "+quizState.subject.name+" concluído com "+pct+"% de acerto.");
+    renderDashboard();
   }
 
   /* ---------------- Gemini AI ---------------- */
@@ -1870,6 +2177,7 @@
     refreshGeminiServerStatus();
     document.getElementById("ytKeyInput").value = state.settings.youtubeKey || "";
     document.getElementById("innerTubeEndpointInput").value = state.settings.innerTubeEndpoint || DEFAULT_ENDPOINT;
+    document.getElementById("dailyGoalInput").value = state.settings.dailyGoal || 3;
 
     var list = document.getElementById("subjManageList");
     list.innerHTML = state.subjects.map(function(s){
@@ -1907,6 +2215,13 @@
     state.settings.innerTubeEndpoint = document.getElementById("innerTubeEndpointInput").value.trim().replace(/\/+$/,"") || DEFAULT_ENDPOINT;
     save();
     toast("Servidor InnerTube salvo.");
+  });
+  document.getElementById("saveDailyGoalBtn").addEventListener("click", function(){
+    var value = parseInt(document.getElementById("dailyGoalInput").value,10);
+    state.settings.dailyGoal = (isNaN(value) || value<1) ? 3 : value;
+    save();
+    toast("Meta diária salva.");
+    renderDashboard();
   });
   document.getElementById("addSubjectBtn").addEventListener("click", function(){
     var name = document.getElementById("newSubjectName").value.trim();
@@ -1956,6 +2271,96 @@
       }
     };
     reader.readAsText(file);
+  });
+
+  /* ---------------- Global search ---------------- */
+  function performGlobalSearch(query){
+    query = (query||"").trim().toLowerCase();
+    var results = { trails:[], lessons:[], questions:[] };
+    if(query.length < 2) return results;
+    syncActiveTrail();
+    state.trails.forEach(function(trail){
+      if(trail.name && trail.name.toLowerCase().indexOf(query) >= 0){
+        results.trails.push({ trail:trail });
+      }
+      (trail.subjects||[]).forEach(function(subject){
+        (subject.videos||[]).forEach(function(v){
+          if(v.title && v.title.toLowerCase().indexOf(query) >= 0){
+            results.lessons.push({ trail:trail, subject:subject, video:v });
+          }
+        });
+        (subject.questions||[]).forEach(function(q){
+          if(q.question && q.question.toLowerCase().indexOf(query) >= 0){
+            results.questions.push({ trail:trail, subject:subject, question:q });
+          }
+        });
+      });
+    });
+    results.trails = results.trails.slice(0,3);
+    results.lessons = results.lessons.slice(0,6);
+    results.questions = results.questions.slice(0,6);
+    return results;
+  }
+
+  function renderGlobalSearchResults(results, query){
+    var box = document.getElementById("globalSearchResults");
+    if(!query){ box.classList.remove("show"); box.innerHTML = ""; return; }
+    var total = results.trails.length + results.lessons.length + results.questions.length;
+    if(total === 0){
+      box.innerHTML = '<div class="gs-empty">Nada encontrado para "'+escapeHtml(query)+'".</div>';
+      box.classList.add("show");
+      return;
+    }
+    var html = "";
+    if(results.trails.length){
+      html += '<div class="gs-group-title">Trilhas</div>';
+      html += results.trails.map(function(r,i){ return '<button class="gs-item" data-type="trail" data-i="'+i+'">📍 '+escapeHtml(r.trail.name)+'</button>'; }).join("");
+    }
+    if(results.lessons.length){
+      html += '<div class="gs-group-title">Aulas</div>';
+      html += results.lessons.map(function(r,i){ return '<button class="gs-item" data-type="lesson" data-i="'+i+'">🎬 '+escapeHtml(r.video.title)+' <span style="color:var(--slate)">— '+escapeHtml(r.subject.name)+'</span></button>'; }).join("");
+    }
+    if(results.questions.length){
+      html += '<div class="gs-group-title">Questões</div>';
+      html += results.questions.map(function(r,i){ return '<button class="gs-item" data-type="question" data-i="'+i+'">❓ '+escapeHtml(r.question.question.slice(0,70))+'</button>'; }).join("");
+    }
+    box.innerHTML = html;
+    box.classList.add("show");
+    box.querySelectorAll(".gs-item").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var type = btn.getAttribute("data-type");
+        var i = parseInt(btn.getAttribute("data-i"),10);
+        if(type === "trail"){
+          switchTrail(results.trails[i].trail.id);
+        } else if(type === "lesson"){
+          var r = results.lessons[i];
+          if(state.activeTrailId !== r.trail.id) switchTrail(r.trail.id);
+          activeVideoSubject = r.subject.id;
+          activeLessonId = r.video.id;
+          goTo("videos");
+        } else if(type === "question"){
+          var rq = results.questions[i];
+          if(state.activeTrailId !== rq.trail.id) switchTrail(rq.trail.id);
+          activeVideoSubject = rq.subject.id;
+          goTo("quiz");
+          document.getElementById("quizSubjectSelect").value = rq.subject.id;
+          renderQuestionBank();
+        }
+        document.getElementById("globalSearchInput").value = "";
+        box.classList.remove("show");
+      });
+    });
+  }
+
+  document.getElementById("globalSearchInput").addEventListener("input", function(){
+    var q = this.value;
+    renderGlobalSearchResults(performGlobalSearch(q), q.trim());
+  });
+  document.addEventListener("click", function(e){
+    if(!e.target.closest("#globalSearch")){
+      var box = document.getElementById("globalSearchResults");
+      if(box) box.classList.remove("show");
+    }
   });
 
   /* ---------------- Init ---------------- */
